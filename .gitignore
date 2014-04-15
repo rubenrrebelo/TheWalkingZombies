@@ -1,20 +1,9 @@
 Temp/
-Library/
+Library/metadata/
+Library/ScriptAssemblies/
 Assets/Teste/
 Assets/_Stuff/
 *.svd
-
-# Nao ignorar estes ficheiros
-!Library/*.asset
-!Library/AssetImportState
-!Library/AssetVersioning.db
-!Library/BuildPlayer.prefs
-!Library/ScriptMapper
-!Library/assetservercachev3
-!Library/expandedItems
-!Library/guidmapper
-!Library/unity default resources
-!Library/unity editor resources
 
 TheWalkingZombies.userprefs
 Assembly-CSharp.csproj
