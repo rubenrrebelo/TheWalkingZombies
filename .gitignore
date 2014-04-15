@@ -5,6 +5,8 @@ Assets/Teste/
 Assets/_Stuff/
 *.svd
 
+Library/CurrentLayout.dwlt
+
 TheWalkingZombies.userprefs
 Assembly-CSharp.csproj
 Assembly-CSharp.pidb
