@@ -42,23 +42,30 @@ public class ZombieScript : MonoBehaviour {
 	void OnTriggerEnter (Collider other) {
 		if (other.tag.Equals("Survivor")){
 			_survivorsInSight.Add(other.gameObject);
+			Debug.Log( "Enter");
 		}
 	}
 	void OnTriggerExit (Collider other){
 		_survivorsInSight.Remove(other.gameObject);
+		Debug.Log( "Exit");
 	}
 
 
+
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
 		
 		randomMove();
 
-		if(_survivorsInSight.Count != 0){
+		/*
+		 * 
+		 * 
+		 if(_survivorsInSight.Count != 0){
 			foreach(GameObject survivor in _survivorsInSight){
 				Debug.Log( "Zombie: " + survivor.gameObject.transform.position);
 			}
 		}
+		 */
 		
 		
 	}
