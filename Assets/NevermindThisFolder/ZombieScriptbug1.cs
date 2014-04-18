@@ -2,34 +2,29 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class SurvivorScript: MonoBehaviour {
-	
+public class ZombieScriptbug1 : MonoBehaviour {
+
 	public float _healthLevel;
 	public float _movSpeed;
 	public float _visionRange;
 	public float _attDamage;
 	public float _attRange;
-	
-	private List<GameObject> _zombiesInSight;
+
 	private List<GameObject> _survivorsInSight;
-	
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 150.0f;
 	private Vector3 currentScreenPos;
-	
-	
-	
+
 	void Start () {
-		
-		_healthLevel = 100.0f;
+
+		_healthLevel = 10.0f;
 		_movSpeed = 5.0f;
 		_visionRange = 20.0f;
 		_attDamage = 5.0f;
-		_attRange = 5.0f;
-		
-		_zombiesInSight = new List<GameObject>();
+		_attRange = 1.0f;
+
 		_survivorsInSight = new List<GameObject>();
-		
+
 		SphereCollider visionRangeCollider = this.gameObject.GetComponent<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
@@ -39,25 +34,20 @@ public class SurvivorScript: MonoBehaviour {
 	}
 	
 	//Actuadores-------------------------------------------------------------------
-	//Attack-Zombie
-	//Collect-Resources
-	//Deposit-Resources
+	//Attack-Survivor
+	
+	
 	//Random-Move
 	private void randomMove(){
 		//TODO: mockup, zombies walk forward
-		//this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.02f);
+		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.2f);
 	}
 	
 	//Sensores---------------------------------------------------------------------
-	//Level-Resources?
-	//Level-Health?
-	//Is-In-Base?
-	//Resources-Around?
-	//Survivors-Around?
-	//Zombies-Around?
-	
+	//See-Survivor (posição do survivor mais próx)
+
 	private bool showDebug = true;
-	
+
 	void OnTriggerEnter (Collider other) {
 		//Debug.Log(this.name + "'s " + this.collider.name + " hit: " + other.name);
 		
@@ -68,13 +58,7 @@ public class SurvivorScript: MonoBehaviour {
 				Debug.Log(this.name + "-New Survivor " + other.name);
 				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
 		}
-		if (other.tag.Equals("Zombie")){
-			_zombiesInSight.Add(other.gameObject);
-			
-			if(showDebug){
-				Debug.Log(this.name + "-New Zombie " + other.name);
-				Debug.Log("#Zombies in range: " + _zombiesInSight.Count);}
-		}
+
 	}
 	
 	void OnTriggerExit (Collider other){
@@ -87,19 +71,10 @@ public class SurvivorScript: MonoBehaviour {
 			}
 			
 		}
-		if (other.tag.Equals("Zombie")){
-			_zombiesInSight.Remove(other.gameObject);
-			
-			if(showDebug){
-				Debug.Log("Lost Zombie.. " + other.name);
-				Debug.Log("#Zombies in range: " + _zombiesInSight.Count);
-			}
-			
-		}
 	}
-	
+
 	void OnGUI(){
-		
+
 		/** /
 		//DEBUG window top-left
 		GUI.Box(new Rect(0,0, 300, 200), "Debug: \n" +
@@ -109,11 +84,11 @@ public class SurvivorScript: MonoBehaviour {
 		        "mouse y: " + (Screen.height - currentScreenPos.y) + "\n"
 		        );
 		/**/
-		
-		
-		
+
+
+
 		/** /
-		//Survivors's Information Box
+		//Zombie's Information Box
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 
 		if(this.GetComponentInChildren<Renderer>().isVisible){
@@ -123,15 +98,12 @@ public class SurvivorScript: MonoBehaviour {
 			        "end.");
 		}
 		/**/
-		
+
 	}
 	
 	void Update () {
 		
 		randomMove();
-
-		//This forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
 
 		/** /
 		//DEBUG
@@ -141,10 +113,15 @@ public class SurvivorScript: MonoBehaviour {
 			}
 		}
 		/**/
-		
+
 		/**/
 		//DEBUG
 		//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
 		/**/
+
+
+
+		
+		
 	}
 }

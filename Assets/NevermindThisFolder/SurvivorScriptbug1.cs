@@ -2,22 +2,22 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class SurvivorScript: MonoBehaviour {
-	
+public class SurvivorScriptbug1: MonoBehaviour {
+
 	public float _healthLevel;
 	public float _movSpeed;
 	public float _visionRange;
 	public float _attDamage;
 	public float _attRange;
-	
+
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
-	
+
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 150.0f;
 	private Vector3 currentScreenPos;
-	
-	
+
+
 	
 	void Start () {
 		
@@ -29,7 +29,7 @@ public class SurvivorScript: MonoBehaviour {
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
-		
+
 		SphereCollider visionRangeCollider = this.gameObject.GetComponent<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
@@ -45,7 +45,7 @@ public class SurvivorScript: MonoBehaviour {
 	//Random-Move
 	private void randomMove(){
 		//TODO: mockup, zombies walk forward
-		//this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.02f);
+		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.2f);
 	}
 	
 	//Sensores---------------------------------------------------------------------
@@ -55,46 +55,46 @@ public class SurvivorScript: MonoBehaviour {
 	//Resources-Around?
 	//Survivors-Around?
 	//Zombies-Around?
-	
+
 	private bool showDebug = true;
 	
 	void OnTriggerEnter (Collider other) {
 		//Debug.Log(this.name + "'s " + this.collider.name + " hit: " + other.name);
-		
+
 		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Add(other.gameObject);
-			
+
 			if(showDebug){
 				Debug.Log(this.name + "-New Survivor " + other.name);
 				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
 		}
 		if (other.tag.Equals("Zombie")){
 			_zombiesInSight.Add(other.gameObject);
-			
+
 			if(showDebug){
 				Debug.Log(this.name + "-New Zombie " + other.name);
 				Debug.Log("#Zombies in range: " + _zombiesInSight.Count);}
 		}
 	}
-	
+
 	void OnTriggerExit (Collider other){
 		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Remove(other.gameObject);
-			
+
 			if(showDebug){
 				Debug.Log("Lost Survivor.. " + other.name);
 				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
 			}
-			
+
 		}
 		if (other.tag.Equals("Zombie")){
 			_zombiesInSight.Remove(other.gameObject);
-			
+
 			if(showDebug){
 				Debug.Log("Lost Zombie.. " + other.name);
 				Debug.Log("#Zombies in range: " + _zombiesInSight.Count);
 			}
-			
+
 		}
 	}
 	
@@ -129,10 +129,7 @@ public class SurvivorScript: MonoBehaviour {
 	void Update () {
 		
 		randomMove();
-
-		//This forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-
+		
 		/** /
 		//DEBUG
 		 if(_survivorsInSight.Count != 0){
