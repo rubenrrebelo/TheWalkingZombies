@@ -101,11 +101,6 @@ public class SurvivorScript: MonoBehaviour {
 		}
 	}
 
-	public void setDisplayInfo(bool param){
-		showInfo = param;
-		Debug.Log("DONE - Selected Survivor!");
-	}
-
 	void OnGUI(){		
 
 		if(showInfo){
@@ -132,5 +127,8 @@ public class SurvivorScript: MonoBehaviour {
 
 	}
 
-
+	public void setDisplayInfo(bool param){
+		showInfo = param;
+	}
+	
 }

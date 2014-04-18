@@ -27,28 +27,22 @@ public class InputManager : MonoBehaviour {
 		if (Input.GetMouseButtonDown(0)){
 			selectedObj = getClickedGameObject().transform.root.gameObject;
 
-			Debug.Log("Clicked: " + selectedObj.name + " with tag " + selectedObj.tag);
-
 			if(selectedObj.tag.Equals("Zombie") || selectedObj.tag.Equals("Survivor") && selectedObj != null){
 				if(_selectedCharacters.Contains(selectedObj)){
 					//send message to not display info
 					if(selectedObj.tag.Equals("Zombie")){
-						Debug.Log("Deselecting Zombie!");
 						selectedObj.GetComponent<ZombieScript>().setDisplayInfo(false);
 					}
 					if(selectedObj.tag.Equals("Survivor")){
-						Debug.Log("Deselecting Survivor!");
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(false);
 					}
 					//remove from list of objects displaying info
 					_selectedCharacters.Remove(selectedObj);
 				}else{
 					if(selectedObj.tag.Equals("Zombie")){
-						Debug.Log("Selecting new Zombie!");
 						selectedObj.GetComponent<ZombieScript>().setDisplayInfo(true);
 					}
 					if(selectedObj.tag.Equals("Survivor")){
-						Debug.Log("Selecting new Survivor!");
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(true);
 					}
 					_selectedCharacters.Add(selectedObj);

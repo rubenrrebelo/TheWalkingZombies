@@ -101,11 +101,10 @@ public class ZombieScript: MonoBehaviour {
 
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-
+		//TODO fix colision changing local position of the zombie body and its empty gameobjectparent
 	}
 
 	public void setDisplayInfo(bool param){
 		showInfo = param;
-		Debug.Log("DONE - Selected Zombie!");
 	}
 }
