@@ -12,7 +12,7 @@ public class ZombieScript: MonoBehaviour {
 	
 	private List<GameObject> _survivorsInSight;
 	private float infoBoxWidth = 100.0f;
-	private float infoBoxHeight = 150.0f;
+	private float infoBoxHeight = 60.0f;
 	private Vector3 currentScreenPos;
 
 	private bool showInfo;
@@ -26,8 +26,8 @@ public class ZombieScript: MonoBehaviour {
 		_attRange = 1.0f;
 
 		_survivorsInSight = new List<GameObject>();
-		
-		SphereCollider visionRangeCollider = this.gameObject.GetComponent<SphereCollider>();
+
+		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
 		}else{
@@ -80,15 +80,14 @@ public class ZombieScript: MonoBehaviour {
 
 	void OnGUI(){
 
-
 		if(showInfo){
 			//TODO: Zombie's Information Box
 			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-			if(this.GetComponentInChildren<Renderer>().isVisible){
+			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        "Zombie info: \n" + 
-				        " \n" +
-				        "end.");
+				        this.name + ": \n" +
+				        "Survivors: " + _survivorsInSight.Count + 
+				        " \n");
 			}
 		}
 
@@ -101,7 +100,6 @@ public class ZombieScript: MonoBehaviour {
 
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-		//TODO fix colision changing local position of the zombie body and its empty gameobjectparent
 	}
 
 	public void setDisplayInfo(bool param){

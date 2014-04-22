@@ -14,7 +14,7 @@ public class SurvivorScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
 	
 	private float infoBoxWidth = 100.0f;
-	private float infoBoxHeight = 150.0f;
+	private float infoBoxHeight = 60.0f;
 	private Vector3 currentScreenPos;
 
 	private bool showInfo;
@@ -31,7 +31,7 @@ public class SurvivorScript: MonoBehaviour {
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
 		
-		SphereCollider visionRangeCollider = this.gameObject.GetComponent<SphereCollider>();
+		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
 		}else{
@@ -107,11 +107,13 @@ public class SurvivorScript: MonoBehaviour {
 			//Survivors's Information Box
 			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 
-			if(this.GetComponentInChildren<Renderer>().isVisible){
+			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        "Survivor info: \n" + 
+				        this.name + ": \n" +
+				        "Survivors: " + _survivorsInSight.Count + 
 				        " \n" +
-				        "end.");
+				        "Zombies: " + _zombiesInSight.Count + 
+				        " \n");
 			}
 		}
 		
