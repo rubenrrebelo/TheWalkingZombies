@@ -12,6 +12,7 @@ public class ZombieScript: MonoBehaviour {
 	
 	private List<GameObject> _survivorsInSight;
 	private GameObject _closestSurvivor;
+	private bool _isReloading;
 
 	private float infoBoxWidth = 150.0f;
 	private float infoBoxHeight = 60.0f;
@@ -23,14 +24,15 @@ public class ZombieScript: MonoBehaviour {
 	
 	void Start () {
 		
-		_healthLevel = 10.0f;
-		_movSpeed = 5.0f;
+		_healthLevel = 100.0f;
+		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
-		_attDamage = 5.0f;
-		_attRange = 1.0f;
+		_attDamage = 30.0f;
+		_attRange = 2.0f;
 
 		navMeshComp = GetComponent<NavMeshAgent>();
 		_survivorsInSight = new List<GameObject>();
+		_isReloading = false;
 
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -87,25 +89,14 @@ public class ZombieScript: MonoBehaviour {
 				Debug.Log("Lost Survivor.. " + other.name);
 				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
 			}
-			
 		}
-
 	}
 
-	void OnGUI(){
-
-		if(showInfo){
-			//TODO: Zombie's Information Box
-			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-			if(this.renderer.isVisible && _closestSurvivor != null){
-
-				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        this.name + ": \n" +
-				        "Closest Survivor: \n" +
-				        _closestSurvivor.name + 
-				        " \n");
-			}
-		}
+	IEnumerator attackClosestSurvivor(){
+		_isReloading = true;
+		_closestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
 	}
 
 	void updateClosestSurvivor(){
@@ -126,12 +117,30 @@ public class ZombieScript: MonoBehaviour {
 		}
 	}
 
+	void OnGUI(){
+
+		if(showInfo){
+			//TODO: Zombie's Information Box
+			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
+			if(this.renderer.isVisible && _closestSurvivor != null){
+				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
+				        this.name + ": \n" +
+				        "Closest Survivor: \n" +
+				        _closestSurvivor.name + 
+				        " \n");
+			}
+		}
+	}
+
 	void Update () {
-
 		updateClosestSurvivor();
+		if(_closestSurvivor != null){
+			if(!_isReloading && Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) <= _attRange){
+				StartCoroutine("attackClosestSurvivor");
+			}
+		}
+
 		randomMove();
-
-
 
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);

@@ -30,7 +30,7 @@ public class SurvivorScript: MonoBehaviour {
 		_healthLevel = 100.0f;
 		_movSpeed = 5.0f;
 		_visionRange = 20.0f;
-		_attDamage = 5.0f;
+		_attDamage = 50.0f;
 		_attRange = 5.0f;
 		
 		_zombiesInSight = new List<GameObject>();
@@ -66,7 +66,7 @@ public class SurvivorScript: MonoBehaviour {
 	//TODO: Random-Move
 	private void randomMove(){
 		//TODO: mockup, zombies walk forward
-		//this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.02f);
+
 	}
 	
 	//Sensores---------------------------------------------------------------------
@@ -127,6 +127,8 @@ public class SurvivorScript: MonoBehaviour {
 			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
+				        "Health: " + _healthLevel + 
+				        " \n" +
 				        "Survivors: " + _survivorsInSight.Count + 
 				        " \n" +
 				        "Zombies: " + _zombiesInSight.Count + 
@@ -154,6 +156,15 @@ public class SurvivorScript: MonoBehaviour {
 
 	public void setDisplayInfo(bool param){
 		showInfo = param;
+	}
+
+	public void loseHealth(float ammount){
+		_healthLevel -= ammount;
+		if(_healthLevel <= 0){
+			Debug.Log(this.name + " died.");
+			//
+			this.transform.position = new Vector3(550, 0, 500.0f);
+		}
 	}
 	
 }
