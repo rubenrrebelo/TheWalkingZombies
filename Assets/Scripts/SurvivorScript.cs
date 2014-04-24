@@ -21,6 +21,7 @@ public class SurvivorScript: MonoBehaviour {
 	private float lifebar_lenght, lifebar_height;
 
 	private NavMeshAgent navMeshComp;
+	private Vector3 CurrentDestination;
 
 	private bool showInfo;
 	
@@ -53,6 +54,7 @@ public class SurvivorScript: MonoBehaviour {
 		lifebar_lenght = 20.0f;
 		lifebar_height = 3.0f;
 
+		CurrentDestination = this.transform.position;
 		navMeshComp.speed = _movSpeed;
 		//TODO: STOP DANCING
 		//navMeshComp.updatePosition = false;
@@ -65,8 +67,14 @@ public class SurvivorScript: MonoBehaviour {
 	//TODO: Deposit-Resources
 	//TODO: Random-Move
 	private void randomMove(){
-		//TODO: mockup, zombies walk forward
-
+		/**/
+			if ((CurrentDestination - transform.position).magnitude < 2.0f) {
+				CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+				                                  ,transform.position.y,
+				                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+				navMeshComp.SetDestination(CurrentDestination);
+			}
+			/**/
 	}
 	
 	//Sensores---------------------------------------------------------------------

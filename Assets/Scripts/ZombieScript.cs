@@ -12,6 +12,7 @@ public class ZombieScript: MonoBehaviour {
 	
 	private List<GameObject> _survivorsInSight;
 	private GameObject _closestSurvivor;
+	private float dist2Survivor;
 	private bool _isReloading;
 
 	private float infoBoxWidth = 150.0f;
@@ -19,6 +20,7 @@ public class ZombieScript: MonoBehaviour {
 	private Vector3 currentScreenPos;
 
 	private NavMeshAgent navMeshComp;
+	private Vector3 CurrentDestination;
 
 	private bool showInfo;
 	
@@ -43,6 +45,9 @@ public class ZombieScript: MonoBehaviour {
 
 		navMeshComp.speed = _movSpeed;
 
+		CurrentDestination = this.transform.position;
+
+
 		showInfo = false;
 	}
 	
@@ -53,15 +58,21 @@ public class ZombieScript: MonoBehaviour {
 	
 	//TODO: Random-Move
 	private void randomMove(){
-		//mockup, zombies just walk forward
-		//this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.05f);
 
-		if(_closestSurvivor != null){
-			navMeshComp.SetDestination(_closestSurvivor.transform.position);
-		}else{
-			this.transform.position += new Vector3(0.0f, 0.0f, -0.5f);
+		Debug.Log("random: " + (navMeshComp.destination - transform.position).magnitude);
+
+
+		/**/
+		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
+			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+		                                  ,transform.position.y,
+		                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			navMeshComp.SetDestination(CurrentDestination);
 		}
-
+		/**/
+		/** /
+		this.transform.position += new Vector3 (0,0,-2);
+		/**/
 	}
 
 	//Sensores---------------------------------------------------------------------
@@ -134,13 +145,22 @@ public class ZombieScript: MonoBehaviour {
 
 	void Update () {
 		updateClosestSurvivor();
-		if(_closestSurvivor != null){
-			if(!_isReloading && Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) <= _attRange){
+
+		if(_closestSurvivor != null){ //has a survivor in his vision range
+
+			navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
+			Debug.Log("following: " + (navMeshComp.destination - transform.position).magnitude);
+
+			//attack him, if in range
+			dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
+			if(!_isReloading && dist2Survivor <= _attRange){
 				StartCoroutine("attackClosestSurvivor");
 			}
+		}else{
+			randomMove();
 		}
 
-		randomMove();
+
 
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);
