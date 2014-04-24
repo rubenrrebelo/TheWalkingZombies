@@ -11,9 +11,13 @@ public class ZombieScript: MonoBehaviour {
 	public float _attRange;
 	
 	private List<GameObject> _survivorsInSight;
-	private float infoBoxWidth = 100.0f;
+	private GameObject _closestSurvivor;
+
+	private float infoBoxWidth = 150.0f;
 	private float infoBoxHeight = 60.0f;
 	private Vector3 currentScreenPos;
+
+	private NavMeshAgent navMeshComp;
 
 	private bool showInfo;
 	
@@ -25,6 +29,7 @@ public class ZombieScript: MonoBehaviour {
 		_attDamage = 5.0f;
 		_attRange = 1.0f;
 
+		navMeshComp = GetComponent<NavMeshAgent>();
 		_survivorsInSight = new List<GameObject>();
 
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
@@ -33,6 +38,8 @@ public class ZombieScript: MonoBehaviour {
 		}else{
 			Debug.Log("Missing sphere collider");
 		}
+
+		navMeshComp.speed = _movSpeed;
 
 		showInfo = false;
 	}
@@ -45,7 +52,14 @@ public class ZombieScript: MonoBehaviour {
 	//TODO: Random-Move
 	private void randomMove(){
 		//mockup, zombies just walk forward
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.05f);
+		//this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.05f);
+
+		if(_closestSurvivor != null){
+			navMeshComp.SetDestination(_closestSurvivor.transform.position);
+		}else{
+			this.transform.position += new Vector3(0.0f, 0.0f, -0.5f);
+		}
+
 	}
 
 	//Sensores---------------------------------------------------------------------
@@ -83,23 +97,44 @@ public class ZombieScript: MonoBehaviour {
 		if(showInfo){
 			//TODO: Zombie's Information Box
 			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-			if(this.renderer.isVisible){
+			if(this.renderer.isVisible && _closestSurvivor != null){
+
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
-				        "Survivors: " + _survivorsInSight.Count + 
+				        "Closest Survivor: \n" +
+				        _closestSurvivor.name + 
 				        " \n");
 			}
 		}
-
-		
 	}
-	
+
+	void updateClosestSurvivor(){
+		if (_survivorsInSight.Count > 0){
+			foreach(GameObject survivor in _survivorsInSight){
+				if(_closestSurvivor == null){
+					_closestSurvivor = survivor;
+				}else{
+					if (Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						_closestSurvivor = survivor;
+					}
+				}
+			}
+		}else{
+			_closestSurvivor = null;
+		}
+	}
+
 	void Update () {
-		
+
+		updateClosestSurvivor();
 		randomMove();
 
+
+
 		//DO NOT DELETE This forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
+		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);
 	}
 
 	public void setDisplayInfo(bool param){

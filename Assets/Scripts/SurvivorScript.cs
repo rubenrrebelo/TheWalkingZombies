@@ -16,6 +16,11 @@ public class SurvivorScript: MonoBehaviour {
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 60.0f;
 	private Vector3 currentScreenPos;
+	
+	private Texture2D life_bar_green, life_bar_red;
+	private float lifebar_lenght, lifebar_height;
+
+	private NavMeshAgent navMeshComp;
 
 	private bool showInfo;
 	
@@ -30,6 +35,8 @@ public class SurvivorScript: MonoBehaviour {
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
+		navMeshComp = GetComponent<NavMeshAgent>();
+
 		
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -39,6 +46,17 @@ public class SurvivorScript: MonoBehaviour {
 		}
 
 		showInfo = false;
+
+		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
+		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
+
+		lifebar_lenght = 20.0f;
+		lifebar_height = 3.0f;
+
+		navMeshComp.speed = _movSpeed;
+		//TODO: STOP DANCING
+		//navMeshComp.updatePosition = false;
+		//navMeshComp.updateRotation = false;
 	}
 	
 	//Actuadores-------------------------------------------------------------------
@@ -102,7 +120,6 @@ public class SurvivorScript: MonoBehaviour {
 	}
 
 	void OnGUI(){		
-
 		if(showInfo){
 			//Survivors's Information Box
 			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
@@ -116,7 +133,13 @@ public class SurvivorScript: MonoBehaviour {
 				        " \n");
 			}
 		}
-		
+
+		//Important, order matters!
+		//TODO: Finishbar
+		GUI.DrawTexture(new Rect(0, 0, lifebar_lenght, lifebar_height), life_bar_red);
+		GUI.DrawTexture(new Rect(0, 0, lifebar_lenght, lifebar_height), life_bar_green);
+
+
 	}
 	
 	void Update () {
