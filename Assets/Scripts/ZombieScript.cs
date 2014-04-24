@@ -22,7 +22,7 @@ public class ZombieScript: MonoBehaviour {
 
 	private NavMeshAgent navMeshComp;
 	private Vector3 CurrentDestination;
-
+	
 	private bool showInfo;
 	
 	void Start () {
@@ -60,10 +60,6 @@ public class ZombieScript: MonoBehaviour {
 	
 	//TODO: Random-Move
 	private void randomMove(){
-
-		Debug.Log("random: " + (navMeshComp.destination - transform.position).magnitude);
-
-
 		/**/
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
 			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
@@ -151,7 +147,6 @@ public class ZombieScript: MonoBehaviour {
 		if(_closestSurvivor != null){ //has a survivor in his vision range
 
 			navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
-			Debug.Log("following: " + (navMeshComp.destination - transform.position).magnitude);
 
 			//attack him, if in range
 			dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
