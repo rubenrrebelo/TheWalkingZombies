@@ -14,6 +14,7 @@ public class ZombieScript: MonoBehaviour {
 	private GameObject _closestSurvivor;
 	private float dist2Survivor;
 	private bool _isReloading;
+	private bool _isFollowing;
 
 	private float infoBoxWidth = 150.0f;
 	private float infoBoxHeight = 60.0f;
@@ -35,6 +36,7 @@ public class ZombieScript: MonoBehaviour {
 		navMeshComp = GetComponent<NavMeshAgent>();
 		_survivorsInSight = new List<GameObject>();
 		_isReloading = false;
+		_isFollowing = false;
 
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -156,8 +158,16 @@ public class ZombieScript: MonoBehaviour {
 			if(!_isReloading && dist2Survivor <= _attRange){
 				StartCoroutine("attackClosestSurvivor");
 			}
+			_isFollowing = true;
 		}else{
-			randomMove();
+			if(_isFollowing == true){
+				CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
+				randomMove();
+				_isFollowing = false;
+			}else{
+				randomMove();
+			}
+
 		}
 
 
