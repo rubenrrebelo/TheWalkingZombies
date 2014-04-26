@@ -11,6 +11,7 @@ public class SurvivorScript: MonoBehaviour {
 	public float _attRange;
 
 	private const float PICKUP_RANGE = 2.0f;
+	private const float FULL_HEALTH = 100.0f;
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
@@ -22,18 +23,20 @@ public class SurvivorScript: MonoBehaviour {
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 90.0f;
 	private Vector3 currentScreenPos;
-	
-	private Texture2D life_bar_green, life_bar_red;
-	private float lifebar_lenght, lifebar_height;
 
 	private NavMeshAgent navMeshComp;
 	private Vector3 CurrentDestination;
+	private float timeWindow;
+	private const float PATH_RESET_TIME = 5.0f;
 
 	private bool showInfo;
+	private float lifebar_x_offset, lifebar_y_offset;
+	private Texture2D life_bar_green, life_bar_red;
+	private float lifebar_lenght, lifebar_height;
 	
 	void Start () {
 		
-		_healthLevel = 100.0f;
+		_healthLevel = FULL_HEALTH;
 		_movSpeed = 5.0f;
 		_visionRange = 20.0f;
 		_attDamage = 50.0f;
@@ -60,9 +63,12 @@ public class SurvivorScript: MonoBehaviour {
 		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
 
-		lifebar_lenght = 20.0f;
-		lifebar_height = 3.0f;
+		lifebar_lenght = 30.0f;
+		lifebar_height = 4.0f;
+		lifebar_x_offset = -15.0f;
+		lifebar_y_offset = -8.0f;
 
+		timeWindow = PATH_RESET_TIME;
 		CurrentDestination = this.transform.position;
 		navMeshComp.speed = _movSpeed;
 		//TODO: STOP DANCING
@@ -77,12 +83,17 @@ public class SurvivorScript: MonoBehaviour {
 	//TODO: Random-Move
 	private void randomMove(){
 		/**/
+
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
+
 			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
 			                                  ,transform.position.y,
 			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
 			navMeshComp.SetDestination(CurrentDestination);
+			timeWindow = PATH_RESET_TIME;
 		}
+
+
 		/**/
 	}
 	
@@ -169,10 +180,23 @@ public class SurvivorScript: MonoBehaviour {
 		}
 	}
 
+	private void checkImpossiblePathAndReset(){//Calculates a new setDestination in case the previous calc isnt reached in a set reset time
+		timeWindow -= Time.deltaTime;
+		if(timeWindow < 0){
+			//Debug.Log("Reset needed by :" + this.name);
+			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+			                                  ,transform.position.y,
+			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			navMeshComp.SetDestination(CurrentDestination);
+			timeWindow = PATH_RESET_TIME;
+		}
+
+	}
+
 	void OnGUI(){		
+		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 		if(showInfo){
 			//Survivors's Information Box
-			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 
 			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
@@ -188,15 +212,24 @@ public class SurvivorScript: MonoBehaviour {
 			}
 		}
 
-		//Important, order matters!
-		//TODO: Finishbar
-		GUI.DrawTexture(new Rect(0, 0, lifebar_lenght, lifebar_height), life_bar_red);
-		GUI.DrawTexture(new Rect(0, 0, lifebar_lenght, lifebar_height), life_bar_green);
+		if(this.renderer.isVisible){
+			//Important, order matters!
+			//TODO: Finishbar
+			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
+			                         lifebar_lenght, 
+			                         lifebar_height), life_bar_red);
+			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
+			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
+			                         lifebar_height), life_bar_green);
+		}
 
 
 	}
 	
 	void Update () {
+
+		checkImpossiblePathAndReset();
+
 		if(_zombiesInSight.Count == 0){
 			updateClosestResource();
 			if(_closestResource != null){

@@ -9,6 +9,8 @@ public class ZombieScript: MonoBehaviour {
 	public float _visionRange;
 	public float _attDamage;
 	public float _attRange;
+
+	private const float FULL_HEALTH = 100.0f;
 	
 	private List<GameObject> _survivorsInSight;
 	private GameObject _closestSurvivor;
@@ -22,12 +24,17 @@ public class ZombieScript: MonoBehaviour {
 
 	private NavMeshAgent navMeshComp;
 	private Vector3 CurrentDestination;
+	private float timeWindow;
+	private const float PATH_RESET_TIME = 5.0f;
 	
 	private bool showInfo;
+	private float lifebar_x_offset, lifebar_y_offset;
+	private Texture2D life_bar_green, life_bar_red;
+	private float lifebar_lenght, lifebar_height;
 	
 	void Start () {
 		
-		_healthLevel = 100.0f;
+		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
 		_attDamage = 30.0f;
@@ -48,9 +55,17 @@ public class ZombieScript: MonoBehaviour {
 		navMeshComp.speed = _movSpeed;
 
 		CurrentDestination = this.transform.position;
-
+		timeWindow = PATH_RESET_TIME;
 
 		showInfo = false;
+
+		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
+		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
+		
+		lifebar_lenght = 30.0f;
+		lifebar_height = 4.0f;
+		lifebar_x_offset = -15.0f;
+		lifebar_y_offset = -8.0f;
 	}
 	
 	
@@ -126,11 +141,23 @@ public class ZombieScript: MonoBehaviour {
 		}
 	}
 
-	void OnGUI(){
+	private void checkImpossiblePathAndReset(){ //Calculates a new setDestination in case the previous calc isnt reached in a set reset time
+		timeWindow -= Time.deltaTime;
+		if(timeWindow < 0){
+			//Debug.Log("Reset needed by :" + this.name);
+			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+			                                  ,transform.position.y,
+			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			navMeshComp.SetDestination(CurrentDestination);
+			timeWindow = PATH_RESET_TIME;
+		}
+		
+	}
 
+	void OnGUI(){
+		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 		if(showInfo){
 			//TODO: Zombie's Information Box
-			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 			if(this.renderer.isVisible && _closestSurvivor != null){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
@@ -139,9 +166,20 @@ public class ZombieScript: MonoBehaviour {
 				        " \n");
 			}
 		}
+				if(this.renderer.isVisible){
+			//Important, order matters!
+			//TODO: Finishbar
+			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
+			                         lifebar_lenght, 
+			                         lifebar_height), life_bar_red);
+			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
+			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
+			                         lifebar_height), life_bar_green);
+		}
 	}
 
 	void Update () {
+		checkImpossiblePathAndReset();
 		updateClosestSurvivor();
 
 		if(_closestSurvivor != null){ //has a survivor in his vision range
@@ -162,7 +200,6 @@ public class ZombieScript: MonoBehaviour {
 			}else{
 				randomMove();
 			}
-
 		}
 
 
