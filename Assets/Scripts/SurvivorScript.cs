@@ -9,16 +9,24 @@ public class SurvivorScript: MonoBehaviour {
 	public float _visionRange;
 	public float _attDamage;
 	public float _attRange;
+	public float _resourceLevel;
 
 	private const float PICKUP_RANGE = 2.0f;
 	private const float FULL_HEALTH = 100.0f;
+	private const float MAX_RESOURCES = 100.0f;
+	private const float CRITICAL_THRESHOLD = 30.0f;
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
 	private List<GameObject> _resourcesInSight;
 	private GameObject _closestResource;
+	private GameObject _closestSurvivor;
+	private GameObject _closestZombie;
+
 	private float _dist2Resource;
 	private bool _isCollecting;
+	private Vector3 healPosition;
+	private bool healInRange;
 	
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 90.0f;
@@ -28,6 +36,7 @@ public class SurvivorScript: MonoBehaviour {
 	private Vector3 CurrentDestination;
 	private float timeWindow;
 	private const float PATH_RESET_TIME = 5.0f;
+
 
 	private bool showInfo;
 	private float lifebar_x_offset, lifebar_y_offset;
@@ -41,6 +50,7 @@ public class SurvivorScript: MonoBehaviour {
 		_visionRange = 20.0f;
 		_attDamage = 50.0f;
 		_attRange = 5.0f;
+		_resourceLevel = 0.0f;
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
@@ -80,6 +90,17 @@ public class SurvivorScript: MonoBehaviour {
 	//TODO: Attack-Zombie
 	//TODO: Collect-Resources
 	//TODO: Deposit-Resources
+	//TODO: Heal
+	private void Heal(){
+		if (healInRange) {
+			navMeshComp.SetDestination (healPosition);
+			if ((healPosition - transform.position).magnitude < 4) {
+				_healthLevel = FULL_HEALTH;
+				//healInRange = false;
+				CurrentDestination = this.transform.position;
+				}
+			}
+	}
 	//TODO: Random-Move
 	private void randomMove(){
 		/**/
@@ -99,12 +120,85 @@ public class SurvivorScript: MonoBehaviour {
 	
 	//Sensores---------------------------------------------------------------------
 	//TODO: Level-Resources?
+	private int LevelResources() 
+	{
+ 		if (_resourceLevel <= CRITICAL_THRESHOLD)
+						return 1;
+		if (_resourceLevel > CRITICAL_THRESHOLD && _resourceLevel < MAX_RESOURCES)
+						return 2;
+		if (_resourceLevel == MAX_RESOURCES)
+						return 3;
+		return 0;
+	}
 	//TODO: Level-Health?
+	private int LevelHealth() 
+	{
+		if (_healthLevel <= CRITICAL_THRESHOLD)
+			return 1;
+		if (_healthLevel > CRITICAL_THRESHOLD && _healthLevel < FULL_HEALTH)
+			return 2;
+		if (_healthLevel == FULL_HEALTH)
+			return 3;
+		return 0;
+	}
 	//TODO: Is-In-Base?
 	//TODO: Resources-Around?
+	private bool ResourcesAround(){
+		if (_resourcesInSight.Count > 0)
+			return true;
+		else
+			return false;
+	}
 	//TODO: Survivors-Around?
+	private bool SurvivorsAround(){
+		if (_survivorsInSight.Count > 0)
+			return true;
+		else
+			return false;
+	}
 	//TODO: Zombies-Around?
-	
+	private bool ZombiesAround(){
+		if (_zombiesInSight.Count > 0)
+			return true;
+		else
+			return false;
+	}
+	//TODO: Nearest-Survivor-Position
+	private Vector3 NearestSurvivorPosition(){
+		  foreach(GameObject survivor in _survivorsInSight){
+				if(_closestSurvivor == null){
+					_closestSurvivor = survivor;
+				}else{
+					if (Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						_closestSurvivor = survivor;
+					}
+				}
+			}
+		 return _closestSurvivor.transform.position;
+	}
+	//TODO: Nearest-Zombie-Position
+	private Vector3 NearestZombiePosition(){
+		foreach(GameObject zombie in _zombiesInSight){
+			if(_closestZombie == null){
+				_closestZombie = zombie;
+			}else{
+				if (Vector3.Distance(_closestZombie.transform.position, this.transform.position) >
+				    Vector3.Distance(zombie.transform.position, this.transform.position))
+				{
+					_closestZombie = zombie;
+				}
+			}
+		}
+		return _closestZombie.transform.position;
+	}
+
+
+
+	/// ////////
+	/// Coliders
+	/// ////////
 	private bool showDebug = false;
 	
 	void OnTriggerEnter (Collider other) {
@@ -130,6 +224,13 @@ public class SurvivorScript: MonoBehaviour {
 			if(showDebug){
 				Debug.Log(this.name + "-New Resources " + other.name);
 				Debug.Log("#Resources in range: " + _resourcesInSight.Count);}
+		}
+		if (other.tag.Equals("Heal")){
+			healPosition = other.transform.position;
+			healInRange = true;
+			if(showDebug){
+				Debug.Log(this.name + "-New heal " + other.name);
+			}
 		}
 	}
 	
@@ -160,7 +261,21 @@ public class SurvivorScript: MonoBehaviour {
 				Debug.Log("#Resources in range: " + _resourcesInSight.Count);
 			}
 		}
+		if (other.tag.Equals("Heal")){
+			healInRange = false;
+			
+			if(showDebug){
+				Debug.Log("Lost Heal.. " + other.name);
+			}
+			
+		}
 	}
+
+	/// ////////
+	/// AUX
+	/// ////////
+
+
 
 	void updateClosestResource(){
 		if (_resourcesInSight.Count > 0){
@@ -192,6 +307,11 @@ public class SurvivorScript: MonoBehaviour {
 		}
 
 	}
+
+	/// //////////
+	/// GUI
+	/// /////////
+
 
 	void OnGUI(){		
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
@@ -227,6 +347,9 @@ public class SurvivorScript: MonoBehaviour {
 	}
 	
 	void Update () {
+		//if( SurvivorsAround())
+		//Debug.Log (NearestSurvivorPosition()); 
+
 
 		checkImpossiblePathAndReset();
 
