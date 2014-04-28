@@ -4,10 +4,15 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BaseLiderScript: MonoBehaviour {
-	
+
+	private float _healthLevel;
 	private float _barrierLevel;
 	private float _visionRange = 10.0f;
 	private float _resourcesLevel;
+
+	private bool _dead;
+
+	private const float FULL_HEALTH = 100.0f;
 
 	private const float BARRIER_FULL_HEALTH = 100.0f;
 	private const float FULL_RESOURCES = 100.0f;
@@ -31,10 +36,13 @@ public class BaseLiderScript: MonoBehaviour {
 	private float lifebar_lenght, lifebar_height;
 	
 	void Start () {
-		
+
+		_healthLevel = FULL_HEALTH;
 		_barrierLevel = BARRIER_FULL_HEALTH;
 		_visionRange = 10.0f;
-		
+
+		_dead = false;
+
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
 
@@ -188,8 +196,6 @@ public class BaseLiderScript: MonoBehaviour {
 			                         (FULL_RESOURCES - (FULL_RESOURCES - _resourcesLevel))*lifebar_lenght/FULL_RESOURCES, 
 			                         lifebar_height), resource_bar_blue);
 		}
-
-
 	}
 	
 	void Update () {
@@ -215,5 +221,23 @@ public class BaseLiderScript: MonoBehaviour {
 		showInfo = param;
 	}
 
+	public void loseHealth(float ammount){
+		_healthLevel -= ammount;
+		if(_healthLevel <= 0 && !_dead){
+			Debug.Log(this.name + " died.");
+			//to make it "disappear"
+			this.transform.position = new Vector3(700, 0, 700.0f);
+			_dead = true;
+			StartCoroutine("destroyAfterDeath");
+		}
+	}
+
+	private IEnumerator destroyAfterDeath(){
+		yield return new WaitForSeconds(0.2F);
+		Destroy(this.gameObject);
+		//TODO: Finish game menu
+		Time.timeScale = 0;
+
+	}
 
 }

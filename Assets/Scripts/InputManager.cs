@@ -27,7 +27,6 @@ public class InputManager : MonoBehaviour {
 	void Update () {
 		if (Input.GetMouseButtonDown(0)){
 			selectedObj = getClickedGameObject().transform.gameObject;
-			Debug.Log("Clicked on: " + selectedObj.name);
 
 			if(selectedObj.tag.Equals("Zombie") || selectedObj.tag.Equals("Survivor") && selectedObj != null){
 				if(_selectedCharacters.Contains(selectedObj)){

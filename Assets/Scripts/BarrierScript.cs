@@ -46,9 +46,9 @@ public class BarrierScript: MonoBehaviour {
 	}
 
 	public void loseHealth(float ammount){
+		//TODO: base leader needs to know this!
 		_healthLevel -= ammount;
 		if(_healthLevel <= 0 && !_dead){
-			Debug.Log(this.name + " died.");
 			//to make it "disappear"
 			this.transform.position = new Vector3(700, 0, 700.0f);
 			_dead = true;

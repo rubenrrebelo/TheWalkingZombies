@@ -34,7 +34,6 @@ public class ZombieScript: MonoBehaviour {
 	private float lifebar_lenght, lifebar_height;
 	
 	void Start () {
-		
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
@@ -69,8 +68,7 @@ public class ZombieScript: MonoBehaviour {
 		lifebar_x_offset = -15.0f;
 		lifebar_y_offset = -8.0f;
 	}
-	
-	
+
 	//Actuadores-------------------------------------------------------------------
 	//TODO: Attack-Survivor
 	
@@ -98,14 +96,14 @@ public class ZombieScript: MonoBehaviour {
 	//TODO: attack base lider also
 	void OnTriggerEnter (Collider other) {
 		
-		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(this.transform.root)){
+		if (other.tag.Equals("Survivor")&& !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Add(other.gameObject);
 			
-			if(showDebug){
+			if(true){
 				Debug.Log(this.name + "-New Survivor " + other.name);
 				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
 		}
-		if (other.tag.Equals("Barrier") && !other.transform.root.Equals(this.transform.root)){
+		if (other.tag.Equals("Barrier")&& !other.transform.root.Equals(this.transform.root)){
 			_barriersInSight.Add(other.gameObject);
 			
 			if(showDebug){
@@ -141,9 +139,12 @@ public class ZombieScript: MonoBehaviour {
 		_isReloading = false;
 	}
 	IEnumerator attackBarrier(){
-		Debug.Log("Attacking barrier!!!");
 		_isReloading = true;
-		//_barriersInSight[0].GetComponent<SurvivorScript>().loseHealth(_attDamage);
+
+		foreach(GameObject barrier in _barriersInSight){
+			barrier.GetComponent<BarrierScript>().loseHealth(_attDamage);
+			break;
+		}
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
 	}
@@ -224,23 +225,26 @@ public class ZombieScript: MonoBehaviour {
 				StartCoroutine("attackClosestSurvivor");
 			}
 			_isFollowing = true;
-		}
-
-		if(_barriersInSight.Count != 0){
-			StartCoroutine("attackBarrier");
+		}else if(_barriersInSight.Count != 0){
+			foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
+				navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
+				//attack him, it in range
+				dist2Survivor = Vector3.Distance(barrier.transform.position, this.transform.position);	
+				if(!_isReloading && dist2Survivor <= _attRange){
+					StartCoroutine("attackBarrier");
+				}
+				break;
+			}
 			_isFollowing = true;
-		}else{
-			if(_isFollowing == true){
+		}else if(_isFollowing == true){
 				CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
 				randomMove();
 				_isFollowing = false;
-			}else{
-				randomMove();
-			}
+		}else{
+			randomMove();
 		}
-
 		//DO NOT DELETE This forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);
+		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 	}
 
 	public void setDisplayInfo(bool param){
