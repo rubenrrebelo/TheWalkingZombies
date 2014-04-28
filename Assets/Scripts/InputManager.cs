@@ -10,6 +10,7 @@ public class InputManager : MonoBehaviour {
 	void Start () {
 
 		_selectedCharacters = new List<GameObject>();
+		_selectedCharacters.Clear();
 
 	}
 
@@ -25,7 +26,8 @@ public class InputManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		if (Input.GetMouseButtonDown(0)){
-			selectedObj = getClickedGameObject().transform.root.gameObject;
+			selectedObj = getClickedGameObject().transform.gameObject;
+			Debug.Log("Clicked on: " + selectedObj.name);
 
 			if(selectedObj.tag.Equals("Zombie") || selectedObj.tag.Equals("Survivor") && selectedObj != null){
 				if(_selectedCharacters.Contains(selectedObj)){

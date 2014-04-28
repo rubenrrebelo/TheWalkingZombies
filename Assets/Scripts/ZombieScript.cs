@@ -13,6 +13,7 @@ public class ZombieScript: MonoBehaviour {
 	private const float FULL_HEALTH = 100.0f;
 	
 	private List<GameObject> _survivorsInSight;
+	private List<GameObject> _barriersInSight;
 	private GameObject _closestSurvivor;
 	private float dist2Survivor;
 	private bool _isReloading;
@@ -42,6 +43,7 @@ public class ZombieScript: MonoBehaviour {
 
 		navMeshComp = GetComponent<NavMeshAgent>();
 		_survivorsInSight = new List<GameObject>();
+		_barriersInSight = new List<GameObject>();
 		_isReloading = false;
 		_isFollowing = false;
 
@@ -92,11 +94,19 @@ public class ZombieScript: MonoBehaviour {
 	//TODO: See-Survivor (posição do survivor mais próx)
 
 	private bool showDebug = false;
-	
+
+	//TODO: attack base lider also
 	void OnTriggerEnter (Collider other) {
 		
 		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Add(other.gameObject);
+			
+			if(showDebug){
+				Debug.Log(this.name + "-New Survivor " + other.name);
+				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
+		}
+		if (other.tag.Equals("Barrier") && !other.transform.root.Equals(this.transform.root)){
+			_barriersInSight.Add(other.gameObject);
 			
 			if(showDebug){
 				Debug.Log(this.name + "-New Survivor " + other.name);
@@ -114,6 +124,14 @@ public class ZombieScript: MonoBehaviour {
 				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
 			}
 		}
+		if (other.tag.Equals("Barrier") && !other.transform.root.Equals(this.transform.root)){
+			_barriersInSight.Remove(other.gameObject);
+			
+			if(showDebug){
+				Debug.Log("Lost Survivor.. " + other.name);
+				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
+			}
+		}
 	}
 
 	IEnumerator attackClosestSurvivor(){
@@ -122,6 +140,14 @@ public class ZombieScript: MonoBehaviour {
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
 	}
+	IEnumerator attackBarrier(){
+		Debug.Log("Attacking barrier!!!");
+		_isReloading = true;
+		//_barriersInSight[0].GetComponent<SurvivorScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
+	}
+
 
 	void updateClosestSurvivor(){
 		if (_survivorsInSight.Count > 0){
@@ -156,14 +182,20 @@ public class ZombieScript: MonoBehaviour {
 
 	void OnGUI(){
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
+		//Debug.Log(this.name + " showInfo "+ showInfo);
 		if(showInfo){
-			//TODO: Zombie's Information Box
+			//Zombie's Information Box
 			if(this.renderer.isVisible && _closestSurvivor != null){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
 				        "Closest Survivor: \n" +
 				        _closestSurvivor.name + 
 				        " \n");
+			}else{
+				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
+				        this.name + ": \n" +
+				        "Barriers: " + _barriersInSight.Count + " \n"
+				        );
 			}
 		}
 				if(this.renderer.isVisible){
@@ -192,6 +224,11 @@ public class ZombieScript: MonoBehaviour {
 				StartCoroutine("attackClosestSurvivor");
 			}
 			_isFollowing = true;
+		}
+
+		if(_barriersInSight.Count != 0){
+			StartCoroutine("attackBarrier");
+			_isFollowing = true;
 		}else{
 			if(_isFollowing == true){
 				CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
@@ -201,8 +238,6 @@ public class ZombieScript: MonoBehaviour {
 				randomMove();
 			}
 		}
-
-
 
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);

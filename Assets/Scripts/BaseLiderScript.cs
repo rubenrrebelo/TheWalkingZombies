@@ -5,16 +5,15 @@ using System.Collections.Generic;
 
 public class BaseLiderScript: MonoBehaviour {
 	
-	public float _barrierLevel;
-	public float _visionRange = 40.0f;
-	public float _resourcesLevel;
+	private float _barrierLevel;
+	private float _visionRange = 10.0f;
+	private float _resourcesLevel;
 
 	private const float BARRIER_FULL_HEALTH = 100.0f;
 	private const float FULL_RESOURCES = 100.0f;
 
 	private const float REPAIR_BASE_SPEED = 1.0f;
 	private const float RESOURCE_DECAY_SPEED = 0.01f;
-
 
 	private const float CRITICAL_BARRIER_THRESHOLD = 30.0f;
 	private const float CRITICAL_RESOURCES_THRESHOLD = 30.0f;
@@ -34,7 +33,7 @@ public class BaseLiderScript: MonoBehaviour {
 	void Start () {
 		
 		_barrierLevel = BARRIER_FULL_HEALTH;
-		//_visionRange = 30.0f;
+		_visionRange = 10.0f;
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
