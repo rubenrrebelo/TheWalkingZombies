@@ -39,7 +39,7 @@ public class SurvivorScript: MonoBehaviour {
 	private Vector3 healPosition;
 	private string _state;
 	private bool _dead; //to prevent multiple destroyAfterDeath calls
-	
+	private bool _isReloading; //checks if the survivor is realoading for his next attack
 	
 	//private bool _isCollecting;
 	
@@ -65,9 +65,9 @@ public class SurvivorScript: MonoBehaviour {
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 5.0f;
 		_visionRange = 20.0f;
-		_attDamage = 50.0f;
+		_attDamage = 25.0f;
 		_attRange = 5.0f;
-		_resourceLevel = 100.0f;
+		_resourceLevel = 0.0f;
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
@@ -108,6 +108,24 @@ public class SurvivorScript: MonoBehaviour {
 	
 	//Actuadores-------------------------------------------------------------------
 	//TODO: Attack-Zombie
+
+	private void attackZombie(GameObject nearestZombie){
+		_state = ATTACKING;
+		navMeshComp.SetDestination(nearestZombie.transform.position);
+
+		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
+		if(!_isReloading && _dist2Zombie <= _attRange){
+			StartCoroutine(attackClosestZombie(nearestZombie));
+		}
+	}
+
+	IEnumerator attackClosestZombie(GameObject nearestZombie){
+		//TODO: finish
+		_isReloading = true;
+		nearestZombie.GetComponent<ZombieScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
+	}
 
 	//Collect-Resources
 	private void CollectResources(GameObject nearestResource){
@@ -359,7 +377,88 @@ public class SurvivorScript: MonoBehaviour {
 		return survivor.GetComponent<SurvivorScript> ().getState ();
 		
 	}
+	//Any-Survivor-Need-Help-Collecting
+	private Vector3 anySurvivorCollecting(){
+		GameObject survivorInNeed = null;
+		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
+				if(survivorInNeed == null){
+					survivorInNeed = survivor;
+				}else{ //chooses the closest survivor to him that is collecting
+					if (Vector3.Distance(survivorInNeed.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						survivorInNeed = survivor;
+					}
+				}
+			}
+		}
+		return survivorInNeed.transform.position;
+	}
 	
+	//Any-Survivor-Need-Help-Attacking
+	private Vector3 anySurvivorAttacking(){
+		GameObject survivorInNeed = null;
+		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are attacking
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(ATTACKING)){
+				if(survivorInNeed == null){
+					survivorInNeed = survivor;
+				}else{ //chooses the closest survivor to him that is attacking
+					if (Vector3.Distance(survivorInNeed.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						survivorInNeed = survivor;
+					}
+				}
+			}
+		}
+		return survivorInNeed.transform.position;
+	}
+
+	private bool isAnySurvivorAttacking(){
+		GameObject survivorInNeed = null;
+		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are attacking
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(ATTACKING)){
+				if(survivorInNeed == null){
+					survivorInNeed = survivor;
+				}else{ //chooses the closest survivor to him that is attacking
+					if (Vector3.Distance(survivorInNeed.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						survivorInNeed = survivor;
+					}
+				}
+			}
+		}
+		if(survivorInNeed == null){
+			return false;
+		}else 
+			return true;
+	}
+
+	private bool isAnySurvivorCollecting(){
+		GameObject survivorInNeed = null;
+		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
+				if(survivorInNeed == null){
+					survivorInNeed = survivor;
+				}else{ //chooses the closest survivor to him that is collecting
+					if (Vector3.Distance(survivorInNeed.transform.position, this.transform.position) >
+					    Vector3.Distance(survivor.transform.position, this.transform.position))
+					{
+						survivorInNeed = survivor;
+					}
+				}
+			}
+		}
+		if(survivorInNeed == null){
+			return false;
+		}else 
+			return true;
+	}
+
+	//TODO: investigar se moving tb torna mais efficiente
+
 	/// ////////
 	/// Coliders
 	/// ////////
@@ -500,13 +599,9 @@ public class SurvivorScript: MonoBehaviour {
 			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
-				        "Health: " + _healthLevel + 
+				        "State: " + _state +
 				        " \n" +
-				        "Resources: " + _resourcesInSight.Count + 
-				        " \n" +
-				        "Survivors: " + _survivorsInSight.Count + 
-				        " \n" +
-				        "Zombies: " + _zombiesInSight.Count + 
+				        "Resources: " + _resourcesInSight.Count +
 				        " \n");
 			}
 		}
@@ -520,17 +615,62 @@ public class SurvivorScript: MonoBehaviour {
 			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
 			                         lifebar_height), life_bar_green);
 		}
-		
-		
 	}
 	
 	
 	void Update () {
+
+		/**/
+		// CICLO PRINCIPAL
+
+		if (LevelHealth () != FULL_LEVEL && IsInBase() ) 
+		{
+			Heal ();
+			//DEPOSIT
+		}
+		else if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
+		{
+			//ATTACK
+			attackZombie(NearestZombie());
+		}
+		else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL ) 
+		{
+			//ESCAPE
+			randomMove();
+		}
+		else if (ResourcesAround() && LevelResources() != FULL_LEVEL )
+		{
+			CollectResources(NearestResource());
+		}
+		else if (IsInBase() && !ZombiesAround())
+		{
+			//DEPOSIT
+		}
+		//TODO: n pode ser so do nearest survivor action, nearest pode dar idle e outro attacking
+		else if(SurvivorsAround()){
+			if(isAnySurvivorAttacking()){
+				MoveTo(anySurvivorAttacking());
+			}else if (isAnySurvivorCollecting()){
+				MoveTo(anySurvivorCollecting());
+			}else{
+				randomMove();
+			}
+		}
+		else
+			randomMove();
+		/**/
+
+
+
+
+
+
 		//if( SurvivorsAround())
 		//Debug.Log (NearestSurvivorPosition()); 
 		
+		/** /
 		if(IsInBase()){
-			Debug.Log ("tou na base");
+			//Debug.Log ("tou na base");
 		}
 
 		if (DepositInRange () && LevelResources() != EMPTY_LEVEL ) {
@@ -541,107 +681,15 @@ public class SurvivorScript: MonoBehaviour {
 			
 		
 		checkImpossiblePathAndReset();
+		/**/
 		
-		/*if (ResourcesAround ())
+		/** /
+		if (ResourcesAround ())
 						CollectResources (NearestResource ());
 				else
 						randomMove ();
-		*/
-		
-		// CICLO PRINCIPAL
-		
-		/*if (LevelHealth () != FULL_LEVEL && IsInBase ()) 
-		{
-			Heal ();
-			//DEPOSIT
-		}
-		/*else if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
-		{
-			//ATTACK
-		}
-		else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL ) 
-		{
-			//ESCAPE
-			randomMove();
-		}
-		else if (ResourcesAround() && LevelResources() != FULL_LEVEL)
-		{
-			CollectResources(NearestResource());
-		}
-		else if (IsInBase() && !ZombiesAround())
-		{
-			//DEPOSIT
-		}
-		else if(SurvivorsAround() && !SurvivorAction(NearestSurvivor()).Equals(IDLE))
-		{
-			MoveTo(NearestSurvivorPosition());
-		}
-		else
-			randomMove();
-		
-		*/
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		/*if(_zombiesInSight.Count == 0){
-			updateClosestResource();
-			if(_closestResource != null){
-				navMeshComp.SetDestination(_closestResource.transform.position);
-				_dist2Resource = Vector3.Distance(_closestResource.transform.position, this.transform.position);
-				if(_dist2Resource <= PICKUP_RANGE){
-					_closestResource.GetComponent<ResourcesScript>().catchResources();
-				}
-				_isCollecting = true;
-			}else{
-				if(_isCollecting == true){
-					CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
-					randomMove();
-					_isCollecting = false;
-				}else{
-					randomMove();
-				}
-			}
-		}else{
-			if(_isCollecting == true){
-				CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
-				randomMove();
-				_isCollecting = false;
-			}else{
-				randomMove();
-			}
-		}*/
+		/**/
+
 		//DO NOT DELETE This forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
 		//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);

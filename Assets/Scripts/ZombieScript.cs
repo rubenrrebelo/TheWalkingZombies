@@ -18,6 +18,7 @@ public class ZombieScript: MonoBehaviour {
 	private float dist2Survivor;
 	private bool _isReloading;
 	private bool _isFollowing;
+	private bool _dead;
 
 	private float infoBoxWidth = 150.0f;
 	private float infoBoxHeight = 60.0f;
@@ -45,6 +46,7 @@ public class ZombieScript: MonoBehaviour {
 		_barriersInSight = new List<GameObject>();
 		_isReloading = false;
 		_isFollowing = false;
+		_dead = false;
 
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -226,7 +228,22 @@ public class ZombieScript: MonoBehaviour {
 		//DO NOT DELETE forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 	}
-
+	public void loseHealth(float ammount){
+		_healthLevel -= ammount;
+		if(_healthLevel <= 0 && !_dead){
+			Debug.Log(this.name + " died.");
+			//to make it "disappear"
+			this.transform.position = new Vector3(700, 0, 700.0f);
+			_dead = true;
+			StartCoroutine("destroyAfterDeath");
+		}
+	}
+	
+	private IEnumerator destroyAfterDeath(){
+		yield return new WaitForSeconds(0.2F);
+		//Debug.Log("Destroyed: "+ this.name);
+		Destroy(this.gameObject);
+	}
 	public void setDisplayInfo(bool param){
 		showInfo = param;
 	}
