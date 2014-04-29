@@ -33,6 +33,7 @@ public class ZombieScript: MonoBehaviour {
 	private float lifebar_x_offset, lifebar_y_offset;
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
+	private Material transparentMaterial;
 	
 	void Start () {
 		_healthLevel = FULL_HEALTH;
@@ -64,7 +65,8 @@ public class ZombieScript: MonoBehaviour {
 
 		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
-		
+		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
+
 		lifebar_lenght = 30.0f;
 		lifebar_height = 4.0f;
 		lifebar_x_offset = -15.0f;
@@ -166,81 +168,88 @@ public class ZombieScript: MonoBehaviour {
 	}
 
 	void OnGUI(){
-		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-		if(showInfo){
-			//Zombie's Information Box
-			if(this.renderer.isVisible && _closestSurvivor != null){
-				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        this.name + ": \n" +
-				        "Closest Survivor: \n" +
-				        _closestSurvivor.name + 
-				        " \n");
-			}else{
-				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        this.name + ": \n" +
-				        "Barriers: " + _barriersInSight.Count + " \n"
-				        );
+		if(!_dead){
+			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
+			if(showInfo){
+				//Zombie's Information Box
+				if(this.renderer.isVisible && _closestSurvivor != null){
+					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
+					        this.name + ": \n" +
+					        "Closest Survivor: \n" +
+					        _closestSurvivor.name + 
+					        " \n");
+				}else{
+					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
+					        this.name + ": \n" +
+					        "Barriers: " + _barriersInSight.Count + " \n"
+					        );
+				}
 			}
-		}
-		if(this.renderer.isVisible){
-			//Important, order matters!
-			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
-			                         lifebar_lenght, 
-			                         lifebar_height), life_bar_red);
-			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
-			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
-			                         lifebar_height), life_bar_green);
+			if(this.renderer.isVisible){
+				//Important, order matters!
+				GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
+				                         lifebar_lenght, 
+				                         lifebar_height), life_bar_red);
+				GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
+				                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
+				                         lifebar_height), life_bar_green);
+			}
 		}
 	}
 
 	void Update () {
-		checkImpossiblePathAndReset();
-		updateClosestSurvivor();
+		if(!_dead){
+			checkImpossiblePathAndReset();
+			updateClosestSurvivor();
 
-		if(_barriersInSight.Count != 0){
-			foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
-				navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
-				//attack him, it in range
-				dist2Survivor = Vector3.Distance(barrier.transform.position, this.transform.position);	
-				if(!_isReloading && dist2Survivor <= _attRange){
-					StartCoroutine("attackBarrier");
+			if(_barriersInSight.Count != 0){
+				foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
+					navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
+					//attack him, it in range
+					dist2Survivor = Vector3.Distance(barrier.transform.position, this.transform.position);	
+					if(!_isReloading && dist2Survivor <= _attRange){
+						StartCoroutine("attackBarrier");
+					}
+					break;
 				}
-				break;
-			}
-			_isFollowing = true;
-		}else if(_closestSurvivor != null){ //has a survivor in his vision range
+				_isFollowing = true;
+			}else if(_closestSurvivor != null){ //has a survivor in his vision range
 
-			navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
+				navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
 
-			//attack him, if in range
-			dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
-			if(!_isReloading && dist2Survivor <= _attRange){
-				StartCoroutine("attackClosestSurvivor");
-			}
-			_isFollowing = true;
-		}else if(_isFollowing == true){
-				CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
+				//attack him, if in range
+				dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
+				if(!_isReloading && dist2Survivor <= _attRange){
+					StartCoroutine("attackClosestSurvivor");
+				}
+				_isFollowing = true;
+			}else if(_isFollowing == true){
+					CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
+					randomMove();
+					_isFollowing = false;
+			}else{
 				randomMove();
-				_isFollowing = false;
+			}
+			//DO NOT DELETE forces collision updates in every frame
+				this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 		}else{
-			randomMove();
+			this.renderer.material = transparentMaterial;
+			Destroy(this.GetComponent<NavMeshAgent>());
+			this.rigidbody.AddForce(0,2000.0f,0, ForceMode.Force);
 		}
-		//DO NOT DELETE forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 	}
+
 	public void loseHealth(float ammount){
 		_healthLevel -= ammount;
 		if(_healthLevel <= 0 && !_dead){
 			Debug.Log(this.name + " died.");
-			//to make it "disappear"
-			this.transform.position = new Vector3(700, 0, 700.0f);
 			_dead = true;
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
-	
+
 	private IEnumerator destroyAfterDeath(){
-		yield return new WaitForSeconds(0.2F);
+		yield return new WaitForSeconds(1.0F);
 		//Debug.Log("Destroyed: "+ this.name);
 		Destroy(this.gameObject);
 	}
