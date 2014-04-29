@@ -23,14 +23,18 @@ public class SurvivorScript: MonoBehaviour {
 	private const string DEPOSITING = "depositing";
 	private const string HEALING = "healing";
 	private const string MOVINGTO = "moving";
+	private const int EMPTY_LEVEL = 0;
 	private const int CRITICAL_LEVEL = 1;
 	private const int NORMAL_LEVEL = 2;
 	private const int FULL_LEVEL = 3;
+
 	
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
 	private List<GameObject> _resourcesInSight;
+	private bool depositInRange;
+	private Vector3 depositPosition;
 	private bool healInRange;
 	private Vector3 healPosition;
 	private string _state;
@@ -39,7 +43,7 @@ public class SurvivorScript: MonoBehaviour {
 	
 	//private bool _isCollecting;
 	
-	
+	private GameObject BaseLider;
 	
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 90.0f;
@@ -63,7 +67,7 @@ public class SurvivorScript: MonoBehaviour {
 		_visionRange = 20.0f;
 		_attDamage = 50.0f;
 		_attRange = 5.0f;
-		_resourceLevel = 0.0f;
+		_resourceLevel = 100.0f;
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
@@ -75,7 +79,11 @@ public class SurvivorScript: MonoBehaviour {
 		
 		navMeshComp = GetComponent<NavMeshAgent>();
 		
-		
+		BaseLider = GameObject.FindWithTag("BaseLeader");
+
+
+
+
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
@@ -122,17 +130,31 @@ public class SurvivorScript: MonoBehaviour {
 		
 	}
 	//TODO: Deposit-Resources
+	private void DepositResources(){
 
+			_state = DEPOSITING;
+			navMeshComp.SetDestination (depositPosition);
+			if ((depositPosition - transform.position).magnitude < 4) {
+				BaseLider.GetComponent<BaseLiderScript>().addResources(_resourceLevel);
+				_resourceLevel = 0;
+				navMeshComp.Stop();
+			}
+
+
+
+
+	}
 	// Heal
 	private void Heal(){
 		
-		if (_healthLevel != FULL_HEALTH) {
+
 			_state = HEALING;
 			navMeshComp.SetDestination (healPosition);
 			if ((healPosition - transform.position).magnitude < 4) {
 				_healthLevel = FULL_HEALTH;
+				//navMeshComp.Stop();
 			}
-		}
+
 		
 	}
 	//Move-to
@@ -164,13 +186,15 @@ public class SurvivorScript: MonoBehaviour {
 	//Level-Resources?
 	private int LevelResources() 
 	{
+		if (_resourceLevel == 0)
+			return 0;
 		if (_resourceLevel <= CRITICAL_THRESHOLD)
 			return 1;
 		if (_resourceLevel > CRITICAL_THRESHOLD && _resourceLevel < MAX_RESOURCES)
 			return 2;
 		if (_resourceLevel == MAX_RESOURCES)
 			return 3;
-		return 0;
+		return 4;
 	}
 	//Level-Health?
 	private int LevelHealth() 
@@ -220,6 +244,13 @@ public class SurvivorScript: MonoBehaviour {
 	//Heal-InRange?
 	private bool HealInRange(){
 		if (healInRange)
+			return true;
+		else
+			return false;
+	}
+	//Deposit-InRange?
+	private bool DepositInRange(){
+		if (depositInRange)
 			return true;
 		else
 			return false;
@@ -367,6 +398,13 @@ public class SurvivorScript: MonoBehaviour {
 				Debug.Log(this.name + "-New heal " + other.name);
 			}
 		}
+		if (other.tag.Equals("Deposit")){
+			depositPosition = other.transform.position;
+			depositInRange = true;
+			if(showDebug){
+				Debug.Log(this.name + "-New deposit " + other.name);
+			}
+		}
 	}
 	
 	void OnTriggerExit (Collider other){
@@ -401,6 +439,14 @@ public class SurvivorScript: MonoBehaviour {
 			
 			if(showDebug){
 				Debug.Log("Lost Heal.. " + other.name);
+			}
+			
+		}
+		if (other.tag.Equals("Deposit")){
+			depositInRange = false;
+			
+			if(showDebug){
+				Debug.Log("Lost Deposit.. " + other.name);
 			}
 			
 		}
@@ -491,7 +537,13 @@ public class SurvivorScript: MonoBehaviour {
 		if(IsInBase()){
 			Debug.Log ("tou na base");
 		}
-		
+
+		if (DepositInRange () && LevelResources() != EMPTY_LEVEL ) {
+						Debug.Log ("Deposit in range");
+						DepositResources ();
+				} else
+					randomMove ();
+			
 		
 		checkImpossiblePathAndReset();
 		
@@ -503,7 +555,7 @@ public class SurvivorScript: MonoBehaviour {
 		
 		// CICLO PRINCIPAL
 		
-		if (LevelHealth () != FULL_LEVEL && IsInBase ()) 
+		/*if (LevelHealth () != FULL_LEVEL && IsInBase ()) 
 		{
 			Heal ();
 			//DEPOSIT
@@ -511,7 +563,7 @@ public class SurvivorScript: MonoBehaviour {
 		/*else if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
 		{
 			//ATTACK
-		}*/
+		}
 		else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL ) 
 		{
 			//ESCAPE
@@ -532,7 +584,7 @@ public class SurvivorScript: MonoBehaviour {
 		else
 			randomMove();
 		
-		
+		*/
 		
 		
 		
