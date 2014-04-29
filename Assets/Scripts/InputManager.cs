@@ -38,7 +38,7 @@ public class InputManager : MonoBehaviour {
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(false);
 					}
 					if(selectedObj.tag.Equals("BaseLeader")){
-						selectedObj.GetComponent<BaseLiderScript>().setDisplayInfo(false);
+						selectedObj.GetComponent<BaseLeaderScript>().setDisplayInfo(false);
 					}
 					//remove from list of objects displaying info
 					_selectedCharacters.Remove(selectedObj);
@@ -50,7 +50,7 @@ public class InputManager : MonoBehaviour {
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(true);
 					}
 					if(selectedObj.tag.Equals("BaseLeader")){
-						selectedObj.GetComponent<BaseLiderScript>().setDisplayInfo(true);
+						selectedObj.GetComponent<BaseLeaderScript>().setDisplayInfo(true);
 					}
 					_selectedCharacters.Add(selectedObj);
 				}

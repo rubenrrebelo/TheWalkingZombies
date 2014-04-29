@@ -116,7 +116,7 @@ public class ZombieScript: MonoBehaviour {
 		if(_closestSurvivor.tag.Equals("Survivor")){
 			_closestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
 		}else{
-			_closestSurvivor.GetComponent<BaseLiderScript>().loseHealth(_attDamage);
+			_closestSurvivor.GetComponent<BaseLeaderScript>().loseHealth(_attDamage);
 		}
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
