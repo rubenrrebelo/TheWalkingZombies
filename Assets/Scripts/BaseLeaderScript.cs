@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class BaseLeaderScript: MonoBehaviour {
 
 	private float _healthLevel;
-	private float _barrierLevel;
+	//private float _barrierLevel;
 	private float _visionRange = 10.0f;
 	private float _resourcesLevel;
 
@@ -14,10 +14,9 @@ public class BaseLeaderScript: MonoBehaviour {
 
 	private const float FULL_HEALTH = 100.0f;
 
-	private const float BARRIER_FULL_HEALTH = 100.0f;
-	private const float FULL_RESOURCES = 100.0f;
+	private const float FULL_RESOURCES = 500.0f;
 
-	private const float REPAIR_BASE_SPEED = 1.0f;
+	private const float REPAIR_BARRIER_SPEED = 0.1f;
 	private const float RESOURCE_DECAY_SPEED = 0.01f;
 
 	private const float CRITICAL_BARRIER_THRESHOLD = 30.0f;
@@ -25,6 +24,10 @@ public class BaseLeaderScript: MonoBehaviour {
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
+    //private List<GameObject> _barriersInSight;
+
+    private GameObject _barrier1;
+    private GameObject _barrier2;
 	
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 90.0f;
@@ -38,14 +41,15 @@ public class BaseLeaderScript: MonoBehaviour {
 	void Start () {
 
 		_healthLevel = FULL_HEALTH;
-		_barrierLevel = BARRIER_FULL_HEALTH;
+		//_barrierLevel = LIFE_FULL_HEALTH;
+        _resourcesLevel = FULL_RESOURCES;
 		_visionRange = 10.0f;
 
 		_dead = false;
 
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
-
+        //_barriersInSight = new List<GameObject>();
 		
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -55,6 +59,9 @@ public class BaseLeaderScript: MonoBehaviour {
 		}
 
 		showInfo = false;
+
+        _barrier1 = GameObject.Find("Barrier_Bottom_Lane");
+        _barrier2 = GameObject.Find("Barrier_Top_Lane");
 
 		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
@@ -69,15 +76,29 @@ public class BaseLeaderScript: MonoBehaviour {
 	}
 	
 	//Actuadores-------------------------------------------------------------------
-	//TODO: Repair-Base
-	private void RepairBase(){
-		if (_barrierLevel <= 0) {
-			Debug.Log (this.name + " GAME OVER.");
+	//Repair-Barrier1
+	private void RepairBarrier1(){
+       
+		if (_barrier1.GetComponent<BarrierScript>().needRepair() && _resourcesLevel <= 0) {
+			Debug.Log (this.name + " Barrier Gone.");
 			return;
 		}
-		_barrierLevel += REPAIR_BASE_SPEED;
-		_resourcesLevel -= REPAIR_BASE_SPEED;
+        _barrier1.GetComponent<BarrierScript>().repairBase(REPAIR_BARRIER_SPEED);
+		_resourcesLevel -= REPAIR_BARRIER_SPEED;
 	}
+
+    //Repair-Barrier2
+    private void RepairBarrier2()
+    {
+
+        if (_barrier2.GetComponent<BarrierScript>().needRepair() && _resourcesLevel <= 0)
+        {
+            Debug.Log(this.name + " Barrier Gone.");
+            return;
+        }
+        _barrier2.GetComponent<BarrierScript>().repairBase(REPAIR_BARRIER_SPEED);
+        _resourcesLevel -= REPAIR_BARRIER_SPEED;
+    }
 
 	//TODO: Request-Resources
 	// Only available in Deliberative Agents
@@ -85,12 +106,12 @@ public class BaseLeaderScript: MonoBehaviour {
 	//TODO: Request-Protection
 	// Only available in Deliberative Agents
 
-	//TODO: Idle
+	//Idle
 	private void Idle(){
 		//Debug.Log ("Nothing to do");
 	}
 
-	//TODO: Resource-Decay
+	//Resource-Decay
 	private void ResourceDecay(){
 		if(_resourcesLevel >= 0)
 			_resourcesLevel -= RESOURCE_DECAY_SPEED;
@@ -99,22 +120,40 @@ public class BaseLeaderScript: MonoBehaviour {
 
 	
 	//Sensores---------------------------------------------------------------------
-	//TODO: Need-Repair?
-	private bool NeedRepair(){
-		return _barrierLevel <= CRITICAL_BARRIER_THRESHOLD;
+	//Need-RepairBarrier1?
+	private bool NeedRepairBarrier1(){
+		return _barrier1.GetComponent<BarrierScript>().needRepair();
 	}
 
-	//TODO: Need-Resources?
+    //Need-RepairBarrier2?
+    private bool NeedRepairBarrier2()
+    {
+        return _barrier2.GetComponent<BarrierScript>().needRepair();
+    }
+
+    //Get-Barrier1-Health?
+    private float GetBarrier1Health()
+    {
+        return _barrier1.GetComponent<BarrierScript>().getBarrierHealth();
+    }
+
+    //Get-Barrier2-Health?
+    private float GetBarrier2Health()
+    {
+        return _barrier2.GetComponent<BarrierScript>().getBarrierHealth();
+    }
+
+	//Need-Resources?
 	private bool NeedResources(){
 		return _resourcesLevel <= CRITICAL_RESOURCES_THRESHOLD;
 	}
 
-	//TODO: Number-Survivors-Around?
+	//Number-Survivors-Around?
 	private int NumberSurvivorsAround(){
 		return _survivorsInSight.Count;
 	}
 
-	//TODO: Number-Zombies-Around?
+	//Number-Zombies-Around?
 	private int NumberZombiesAround(){
 		return _zombiesInSight.Count;
 	}
@@ -140,6 +179,7 @@ public class BaseLeaderScript: MonoBehaviour {
 				Debug.Log(this.name + "-New Zombie " + other.name);
 				Debug.Log("#Zombies in range: " + _zombiesInSight.Count);}
 		}
+       
 	}
 	
 	void OnTriggerExit (Collider other){
@@ -172,7 +212,7 @@ public class BaseLeaderScript: MonoBehaviour {
 			if(this.renderer.isVisible){
 				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 				        this.name + ": \n" +
-				        "Health: " + _barrierLevel + 
+				        "Health: " + _healthLevel + 
 				        " \n" +
 				        "Resources: " + _resourcesLevel + 
 				        " \n" +
@@ -183,14 +223,14 @@ public class BaseLeaderScript: MonoBehaviour {
 			}
 		}
 
-		if(this.renderer.isVisible){
+		if(this.renderer.isVisible && !_dead){
 			//Important, order matters!
 			//TODO: Finishbar
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
 			                         lifebar_lenght, 
 			                         lifebar_height), life_bar_red);
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
-			                         (BARRIER_FULL_HEALTH - (BARRIER_FULL_HEALTH - _healthLevel))*lifebar_lenght/BARRIER_FULL_HEALTH, 
+                                     (FULL_HEALTH - (FULL_HEALTH - _healthLevel)) * lifebar_lenght / FULL_HEALTH, 
 			                         lifebar_height), life_bar_green);
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset + lifebar_height,
 			                         (FULL_RESOURCES - (FULL_RESOURCES - _resourcesLevel))*lifebar_lenght/FULL_RESOURCES, 
@@ -200,11 +240,29 @@ public class BaseLeaderScript: MonoBehaviour {
 	
 	void Update () {
 
+
 		ResourceDecay ();
 
-		if (NeedRepair () && !NeedResources ()) {
-				RepairBase ();
-		} else if (NeedResources ()) {
+		if ((NeedRepairBarrier1 () || NeedRepairBarrier2()) && !NeedResources ()) {
+            if (GetBarrier1Health() < GetBarrier2Health())
+            {
+                RepairBarrier1();
+            }
+            else if (GetBarrier1Health() > GetBarrier2Health())
+            {
+                RepairBarrier2();
+            }
+            else
+            {
+                int r = Random.Range(0, 1);
+                if (r == 0) { RepairBarrier1(); }
+                else{ RepairBarrier2(); }
+               
+            }
+        }
+        
+        else if (NeedResources())
+        {
 				//Request Resources
 		} else if (NumberSurvivorsAround() < NumberZombiesAround()) {
 				// Request protection
