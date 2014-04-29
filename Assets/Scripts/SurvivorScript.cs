@@ -27,8 +27,6 @@ public class SurvivorScript: MonoBehaviour {
 	private const int CRITICAL_LEVEL = 1;
 	private const int NORMAL_LEVEL = 2;
 	private const int FULL_LEVEL = 3;
-
-	
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
@@ -59,6 +57,7 @@ public class SurvivorScript: MonoBehaviour {
 	private float lifebar_x_offset, lifebar_y_offset;
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
+	private Material transparentMaterial;
 	
 	void Start () {
 		
@@ -81,9 +80,6 @@ public class SurvivorScript: MonoBehaviour {
 		
 		BaseLider = GameObject.FindWithTag("BaseLeader");
 
-
-
-
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
@@ -95,6 +91,7 @@ public class SurvivorScript: MonoBehaviour {
 		
 		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
+		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
 		
 		lifebar_lenght = 30.0f;
 		lifebar_height = 4.0f;
@@ -138,11 +135,8 @@ public class SurvivorScript: MonoBehaviour {
 		if(_dist2Resource <= PICKUP_RANGE){
 			nearestResource.GetComponent<ResourcesScript>().catchResources();
 		}
-		
 		//---------------------------------------- TODO: FALTA ACTUALIZAR A VARIAVEL RESOURCE DO AGENTE
-		
-		
-		
+
 	}
 	//Deposit-Resources
 	private void DepositResources(){
@@ -560,14 +554,13 @@ public class SurvivorScript: MonoBehaviour {
 		if(_healthLevel <= 0 && !_dead){
 			Debug.Log(this.name + " died.");
 			//to make it "disappear"
-			this.transform.position = new Vector3(700, 0, 700.0f);
 			_dead = true;
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
 
 	private IEnumerator destroyAfterDeath(){
-		yield return new WaitForSeconds(0.2F);
+		yield return new WaitForSeconds(1.0F);
 		//Debug.Log("Destroyed: "+ this.name);
 		Destroy(this.gameObject);
 	}
@@ -592,6 +585,7 @@ public class SurvivorScript: MonoBehaviour {
 	
 	
 	void OnGUI(){		
+		if(!_dead){
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 		if(showInfo){
 			//Survivors's Information Box
@@ -615,11 +609,12 @@ public class SurvivorScript: MonoBehaviour {
 			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
 			                         lifebar_height), life_bar_green);
 		}
+			}
 	}
 	
 	
 	void Update () {
-
+		if(!_dead){
 		/**/
 		// CICLO PRINCIPAL
 
@@ -658,43 +653,18 @@ public class SurvivorScript: MonoBehaviour {
 		}
 		else
 			randomMove();
-		/**/
-
-
-
-
-
-
-		//if( SurvivorsAround())
-		//Debug.Log (NearestSurvivorPosition()); 
 		
-		/** /
-		if(IsInBase()){
-			//Debug.Log ("tou na base");
+			//avoid navmesh pathfinding issues
+			checkImpossiblePathAndReset();
+			//DO NOT DELETE This forces collision updates in every frame
+			this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
+			//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
+
+		/**/
+		}else{
+			this.renderer.material = transparentMaterial;
+			Destroy(this.GetComponent<NavMeshAgent>());
+			this.rigidbody.AddForce(0,2000.0f,0, ForceMode.Force);
 		}
-
-		if (DepositInRange () && LevelResources() != EMPTY_LEVEL ) {
-						Debug.Log ("Deposit in range");
-						DepositResources ();
-				} else
-					randomMove ();
-			
-		
-		checkImpossiblePathAndReset();
-		/**/
-		
-		/** /
-		if (ResourcesAround ())
-						CollectResources (NearestResource ());
-				else
-						randomMove ();
-		/**/
-
-		//DO NOT DELETE This forces collision updates in every frame
-		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-		//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
 	}
-	
-	
-	
 }
