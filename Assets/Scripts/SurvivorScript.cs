@@ -104,9 +104,6 @@ public class SurvivorScript: MonoBehaviour {
 		timeWindow = PATH_RESET_TIME;
 		CurrentDestination = this.transform.position;
 		navMeshComp.speed = _movSpeed;
-		//TODO: STOP DANCING
-		//navMeshComp.updatePosition = false;
-		//navMeshComp.updateRotation = false;
 	}
 	
 	//Actuadores-------------------------------------------------------------------
@@ -129,15 +126,15 @@ public class SurvivorScript: MonoBehaviour {
 		
 		
 	}
-	//TODO: Deposit-Resources
+	//Deposit-Resources
 	private void DepositResources(){
 
 			_state = DEPOSITING;
 			navMeshComp.SetDestination (depositPosition);
 			if ((depositPosition - transform.position).magnitude < 4) {
-				BaseLider.GetComponent<BaseLiderScript>().addResources(_resourceLevel);
+				BaseLider.GetComponent<BaseLeaderScript>().addResources(_resourceLevel);
 				_resourceLevel = 0;
-				navMeshComp.Stop();
+				//navMeshComp.Stop();
 			}
 
 
@@ -448,7 +445,6 @@ public class SurvivorScript: MonoBehaviour {
 			if(showDebug){
 				Debug.Log("Lost Deposit.. " + other.name);
 			}
-			
 		}
 	}
 
@@ -517,7 +513,6 @@ public class SurvivorScript: MonoBehaviour {
 		
 		if(this.renderer.isVisible){
 			//Important, order matters!
-			//TODO: Finishbar
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
 			                         lifebar_lenght, 
 			                         lifebar_height), life_bar_red);

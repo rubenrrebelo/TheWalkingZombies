@@ -195,17 +195,7 @@ public class ZombieScript: MonoBehaviour {
 		checkImpossiblePathAndReset();
 		updateClosestSurvivor();
 
-		if(_closestSurvivor != null){ //has a survivor in his vision range
-
-			navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
-
-			//attack him, if in range
-			dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
-			if(!_isReloading && dist2Survivor <= _attRange){
-				StartCoroutine("attackClosestSurvivor");
-			}
-			_isFollowing = true;
-		}else if(_barriersInSight.Count != 0){
+		if(_barriersInSight.Count != 0){
 			foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
 				navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
 				//attack him, it in range
@@ -214,6 +204,16 @@ public class ZombieScript: MonoBehaviour {
 					StartCoroutine("attackBarrier");
 				}
 				break;
+			}
+			_isFollowing = true;
+		}else if(_closestSurvivor != null){ //has a survivor in his vision range
+
+			navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
+
+			//attack him, if in range
+			dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
+			if(!_isReloading && dist2Survivor <= _attRange){
+				StartCoroutine("attackClosestSurvivor");
 			}
 			_isFollowing = true;
 		}else if(_isFollowing == true){
