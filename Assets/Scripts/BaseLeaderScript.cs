@@ -26,8 +26,8 @@ public class BaseLeaderScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
     //private List<GameObject> _barriersInSight;
 
-    public GameObject _barrier1;
-    public GameObject _barrier2;
+    private GameObject _barrier1;
+    private GameObject _barrier2;
 	
 	private float infoBoxWidth = 100.0f;
 	private float infoBoxHeight = 90.0f;
@@ -59,6 +59,9 @@ public class BaseLeaderScript: MonoBehaviour {
 		}
 
 		showInfo = false;
+
+        _barrier1 = GameObject.Find("Barrier_Bottom_Lane");
+        _barrier2 = GameObject.Find("Barrier_Top_Lane");
 
 		life_bar_green = (Texture2D)Resources.Load(@"Textures/life_bar_green", typeof(Texture2D));
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
