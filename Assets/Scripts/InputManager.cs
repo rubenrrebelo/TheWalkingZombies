@@ -37,6 +37,9 @@ public class InputManager : MonoBehaviour {
 					if(selectedObj.tag.Equals("Survivor")){
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(false);
 					}
+					if(selectedObj.tag.Equals("BaseLeader")){
+						selectedObj.GetComponent<BaseLiderScript>().setDisplayInfo(false);
+					}
 					//remove from list of objects displaying info
 					_selectedCharacters.Remove(selectedObj);
 				}else{
@@ -45,6 +48,9 @@ public class InputManager : MonoBehaviour {
 					}
 					if(selectedObj.tag.Equals("Survivor")){
 						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(true);
+					}
+					if(selectedObj.tag.Equals("BaseLeader")){
+						selectedObj.GetComponent<BaseLiderScript>().setDisplayInfo(true);
 					}
 					_selectedCharacters.Add(selectedObj);
 				}

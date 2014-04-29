@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class BaseLiderScript: MonoBehaviour {
+public class BaseLeaderScript: MonoBehaviour {
 
 	private float _healthLevel;
 	private float _barrierLevel;
@@ -190,7 +190,7 @@ public class BaseLiderScript: MonoBehaviour {
 			                         lifebar_lenght, 
 			                         lifebar_height), life_bar_red);
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
-			                         (BARRIER_FULL_HEALTH - (BARRIER_FULL_HEALTH - _barrierLevel))*lifebar_lenght/BARRIER_FULL_HEALTH, 
+			                         (BARRIER_FULL_HEALTH - (BARRIER_FULL_HEALTH - _healthLevel))*lifebar_lenght/BARRIER_FULL_HEALTH, 
 			                         lifebar_height), life_bar_green);
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset + lifebar_height,
 			                         (FULL_RESOURCES - (FULL_RESOURCES - _resourcesLevel))*lifebar_lenght/FULL_RESOURCES, 
@@ -230,6 +230,10 @@ public class BaseLiderScript: MonoBehaviour {
 			_dead = true;
 			StartCoroutine("destroyAfterDeath");
 		}
+	}
+
+	public void addResources(float ammount){
+		_resourcesLevel += ammount;
 	}
 
 	private IEnumerator destroyAfterDeath(){

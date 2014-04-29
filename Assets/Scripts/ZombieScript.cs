@@ -73,7 +73,7 @@ public class ZombieScript: MonoBehaviour {
 	//TODO: Attack-Survivor
 	
 	
-	//TODO: Random-Move
+	//Random-Move
 	private void randomMove(){
 		/**/
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
@@ -89,62 +89,45 @@ public class ZombieScript: MonoBehaviour {
 	}
 
 	//Sensores---------------------------------------------------------------------
-	//TODO: See-Survivor (posição do survivor mais próx)
+	//See-Survivor (posição do survivor mais próx)
 
-	private bool showDebug = false;
 
 	//TODO: attack base lider also
 	void OnTriggerEnter (Collider other) {
-		
-		if (other.tag.Equals("Survivor")&& !other.transform.root.Equals(this.transform.root)){
+		if (other.tag.Equals("Survivor") || other.tag.Equals("BaseLeader") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Add(other.gameObject);
-			
-			if(true){
-				Debug.Log(this.name + "-New Survivor " + other.name);
-				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
 		}
 		if (other.tag.Equals("Barrier")&& !other.transform.root.Equals(this.transform.root)){
 			_barriersInSight.Add(other.gameObject);
-			
-			if(showDebug){
-				Debug.Log(this.name + "-New Survivor " + other.name);
-				Debug.Log("#Survivors in range: " + _survivorsInSight.Count);}
 		}
-
 	}
 	
 	void OnTriggerExit (Collider other){
-		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(this.transform.root)){
+		if (other.tag.Equals("Survivor") || other.tag.Equals("BaseLeader") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Remove(other.gameObject);
-			
-			if(showDebug){
-				Debug.Log("Lost Survivor.. " + other.name);
-				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
-			}
 		}
 		if (other.tag.Equals("Barrier") && !other.transform.root.Equals(this.transform.root)){
 			_barriersInSight.Remove(other.gameObject);
-			
-			if(showDebug){
-				Debug.Log("Lost Survivor.. " + other.name);
-				Debug.Log( "#Survivors in range: " + _survivorsInSight.Count);
-			}
 		}
 	}
 
 	IEnumerator attackClosestSurvivor(){
 		_isReloading = true;
-		_closestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+		if(_closestSurvivor.tag.Equals("Survivor")){
+			_closestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+		}else{
+			_closestSurvivor.GetComponent<BaseLiderScript>().loseHealth(_attDamage);
+		}
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
 	}
+
 	IEnumerator attackBarrier(){
 		_isReloading = true;
-
 		foreach(GameObject barrier in _barriersInSight){
 			barrier.GetComponent<BarrierScript>().loseHealth(_attDamage);
 			break;
-		}
+		} 
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
 	}
@@ -178,12 +161,10 @@ public class ZombieScript: MonoBehaviour {
 			navMeshComp.SetDestination(CurrentDestination);
 			timeWindow = PATH_RESET_TIME;
 		}
-		
 	}
 
 	void OnGUI(){
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-		//Debug.Log(this.name + " showInfo "+ showInfo);
 		if(showInfo){
 			//Zombie's Information Box
 			if(this.renderer.isVisible && _closestSurvivor != null){
@@ -199,9 +180,8 @@ public class ZombieScript: MonoBehaviour {
 				        );
 			}
 		}
-				if(this.renderer.isVisible){
+		if(this.renderer.isVisible){
 			//Important, order matters!
-			//TODO: Finishbar
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
 			                         lifebar_lenght, 
 			                         lifebar_height), life_bar_red);
@@ -243,7 +223,7 @@ public class ZombieScript: MonoBehaviour {
 		}else{
 			randomMove();
 		}
-		//DO NOT DELETE This forces collision updates in every frame
+		//DO NOT DELETE forces collision updates in every frame
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 	}
 
