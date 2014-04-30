@@ -569,9 +569,8 @@ public class SurvivorScript: MonoBehaviour {
 	}
 
 	private IEnumerator destroyAfterDeath(){
-		yield return new WaitForSeconds(2.0F);
+		yield return new WaitForSeconds(3.0F);
 		//Debug.Log("Destroyed: "+ this.name);
-
 		Destroy(this.gameObject);
 	}
 
@@ -693,7 +692,7 @@ public class SurvivorScript: MonoBehaviour {
 		}else{
 			this.renderer.material = transparentMaterial;
 			Destroy(this.GetComponent<NavMeshAgent>());
-			this.rigidbody.AddForce(0,2000.0f,0, ForceMode.Force);
+			this.rigidbody.AddForce(0,100.0f,0, ForceMode.Force);
 		}
 	}
 }

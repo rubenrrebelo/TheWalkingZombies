@@ -38,7 +38,13 @@ public class ZombieScript: MonoBehaviour {
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
-	
+
+	void Awake(){
+		_survivorsInSight = new List<GameObject>();
+		navMeshComp = GetComponent<NavMeshAgent>();
+		_barriersInSight = new List<GameObject>();
+	}
+
 	void Start () {
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
@@ -46,9 +52,7 @@ public class ZombieScript: MonoBehaviour {
 		_attDamage = 30.0f;
 		_attRange = 2.0f;
 
-		navMeshComp = GetComponent<NavMeshAgent>();
-		_survivorsInSight = new List<GameObject>();
-		_barriersInSight = new List<GameObject>();
+
 		_isReloading = false;
 		//_isFollowing = false;
 		_dead = false;
@@ -248,47 +252,7 @@ public class ZombieScript: MonoBehaviour {
 			_barriersInSight.Remove(other.gameObject);
 		}
 	}
-	/*
-	IEnumerator attackClosestSurvivor(){
-		_isReloading = true;
-		if(_closestSurvivor.tag.Equals("Survivor")){
-			_closestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
-		}else{
-			_closestSurvivor.GetComponent<BaseLeaderScript>().loseHealth(_attDamage);
-		}
-		yield return new WaitForSeconds(1.5F);
-		_isReloading = false;
-	}
 
-	IEnumerator attackBarrier(){
-		_isReloading = true;
-		foreach(GameObject barrier in _barriersInSight){
-			barrier.GetComponent<BarrierScript>().loseHealth(_attDamage);
-			break;
-		} 
-		yield return new WaitForSeconds(1.5F);
-		_isReloading = false;
-	}
-
-
-	void updateClosestSurvivor(){
-		if (_survivorsInSight.Count > 0){
-			foreach(GameObject survivor in _survivorsInSight){
-				if(_closestSurvivor == null){
-					_closestSurvivor = survivor;
-				}else{
-					if (Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) >
-					    Vector3.Distance(survivor.transform.position, this.transform.position))
-					{
-						_closestSurvivor = survivor;
-					}
-				}
-			}
-		}else{
-			_closestSurvivor = null;
-		}
-	}
-	*/
 	private void checkImpossiblePathAndReset(){ //Calculates a new setDestination in case the previous calc isnt reached in a set reset time
 		timeWindow -= Time.deltaTime;
 		if(timeWindow < 0){
@@ -331,7 +295,7 @@ public class ZombieScript: MonoBehaviour {
 		}
 	}
 
-	void Update () {
+	void FixedUpdate () {
 		if(!_dead){
 			checkImpossiblePathAndReset();
 			//updateClosestSurvivor();
