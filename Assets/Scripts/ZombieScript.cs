@@ -351,35 +351,7 @@ public class ZombieScript: MonoBehaviour {
 			else
 				randomMove();
 
-			/*if(_barriersInSight.Count != 0){
-				foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
-					navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
-					//attack him, it in range
-					dist2Survivor = Vector3.Distance(barrier.transform.position, this.transform.position);	
-					if(!_isReloading && dist2Survivor <= _attRange){
-						StartCoroutine("attackBarrier");
-					}
-					break;
-				}
-				_isFollowing = true;
-			}else if(_closestSurvivor != null){ //has a survivor in his vision range
-
-				navMeshComp.SetDestination(_closestSurvivor.transform.position); //move towards survivor
-
-				//attack him, if in range
-				dist2Survivor = Vector3.Distance(_closestSurvivor.transform.position, this.transform.position);	
-				if(!_isReloading && dist2Survivor <= _attRange){
-					StartCoroutine("attackClosestSurvivor");
-				}
-				_isFollowing = true;
-			}else if(_isFollowing == true){
-					CurrentDestination = this.transform.position; // resets his destination, because of the bug that made him stand still
-					randomMove();
-					_isFollowing = false;
-			}else{
-				randomMove();
-			}*/
-			//DO NOT DELETE forces collision updates in every frame
+				//DO NOT DELETE forces collision updates in every frame
 				this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 		}else{
 			this.renderer.material = transparentMaterial;

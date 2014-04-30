@@ -16,7 +16,7 @@ public class SurvivorScript: MonoBehaviour {
 	private const float PICKUP_RANGE = 2.0f;
 	private const float FULL_HEALTH = 100.0f;
 	private const float MAX_RESOURCES = 100.0f;
-	private const float CRITICAL_THRESHOLD = 30.0f;
+	private const float CRITICAL_THRESHOLD = 40.0f;
 	private const string IDLE = "idle";
 	private const string ATTACKING = "attacking";
 	private const string COLLECTING = "collecting";
@@ -61,11 +61,13 @@ public class SurvivorScript: MonoBehaviour {
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
+
+	private GameObject myZombieBodyIfDead;
 	
 	void Start () {
 		
 		_healthLevel = FULL_HEALTH;
-		_movSpeed = 5.0f;
+		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
 		_attRange = 5.0f;
@@ -80,6 +82,7 @@ public class SurvivorScript: MonoBehaviour {
 		_isReloadingCollect = false;
 
 		_dead = false;
+		myZombieBodyIfDead = (GameObject)Resources.Load(@"Models/Zombie",typeof(GameObject));
 		
 		navMeshComp = GetComponent<NavMeshAgent>();
 		
@@ -109,7 +112,6 @@ public class SurvivorScript: MonoBehaviour {
 	}
 	
 	//Actuadores-------------------------------------------------------------------
-	//TODO: Attack-Zombie
 
 	private void attackZombie(GameObject nearestZombie){
 		_state = ATTACKING;
@@ -158,10 +160,6 @@ public class SurvivorScript: MonoBehaviour {
 				_resourceLevel = 0;
 				//navMeshComp.Stop();
 			}
-
-
-
-
 	}
 	// Heal
 	private void Heal(){
@@ -565,13 +563,15 @@ public class SurvivorScript: MonoBehaviour {
 			Debug.Log(this.name + " died.");
 			//to make it "disappear"
 			_dead = true;
+			Instantiate(Resources.Load(@"Models/Characters/Zombie"), this.transform.position, this.transform.rotation);
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
 
 	private IEnumerator destroyAfterDeath(){
-		yield return new WaitForSeconds(1.0F);
+		yield return new WaitForSeconds(2.0F);
 		//Debug.Log("Destroyed: "+ this.name);
+
 		Destroy(this.gameObject);
 	}
 
@@ -628,42 +628,61 @@ public class SurvivorScript: MonoBehaviour {
 		/**/
 		// CICLO PRINCIPAL
 
-		if (LevelHealth () != FULL_LEVEL && IsInBase() ) 
+		if (LevelHealth () == CRITICAL_LEVEL && HealInRange() ) 
 		{
 			Heal ();
-			//DEPOSIT
 		}
 		else if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
 		{
-			//ATTACK
 			attackZombie(NearestZombie());
 		}
 		else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL ) 
 		{
-			//ESCAPE
-			randomMove();
+				if(LevelResources() != 0 && DepositInRange()){
+					/**/
+					//might choose to risk life to store resources
+					if(Random.Range(0,2) == 0){
+						DepositResources();
+						//Debug.Log("Heroic Act!! Never forget " + this.name);
+					}else{
+						randomMove();
+					}
+					/**/
+				}else{
+					randomMove();
+				}
+		}
+		else if(!ZombiesAround() && LevelResources() != 0 && DepositInRange()) 
+		{
+			DepositResources();
 		}
 		else if (ResourcesAround() && LevelResources() != FULL_LEVEL )
 		{
 			CollectResources(NearestResource());
 		}
-		else if (IsInBase() && !ZombiesAround())
-		{
-			//DEPOSIT
-		}
-		//TODO: n pode ser so do nearest survivor action, nearest pode dar idle e outro attacking
 		else if(SurvivorsAround()){
 			if(isAnySurvivorAttacking()){
 				MoveTo(anySurvivorAttacking());
-			}else if (isAnySurvivorCollecting()){
+			}
+			else if (isAnySurvivorCollecting()){
 				MoveTo(anySurvivorCollecting());
-			}else{
+			}
+			/** /
+			//doesn't make it more efficient, map is less explored
+			else if(isAnySurvivorMoving()){
+				MoveTo(anySurvivorMoving);
+			}
+			/**/
+			else{
 				randomMove();
 			}
 		}
 		else
 			randomMove();
-		
+
+
+
+
 			//avoid navmesh pathfinding issues
 			checkImpossiblePathAndReset();
 			//DO NOT DELETE This forces collision updates in every frame

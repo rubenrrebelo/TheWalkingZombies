@@ -42,7 +42,7 @@ public class BaseLeaderScript: MonoBehaviour {
 
 		_healthLevel = FULL_HEALTH;
 		//_barrierLevel = LIFE_FULL_HEALTH;
-        _resourcesLevel = FULL_RESOURCES;
+        _resourcesLevel = 100.0f;
 		_visionRange = 10.0f;
 
 		_dead = false;
