@@ -11,7 +11,6 @@ public class InputManager : MonoBehaviour {
 
 		_selectedCharacters = new List<GameObject>();
 		_selectedCharacters.Clear();
-
 	}
 
 	GameObject getClickedGameObject() { // Builds a ray from camera point of view to the mouse position 
@@ -60,10 +59,10 @@ public class InputManager : MonoBehaviour {
 		// Navigation
 
 		if(Input.GetAxis("Mouse ScrollWheel") > 0){
-			Camera.main.transform.Translate(new Vector3(0, 0, 100) * Time.deltaTime);
+			Camera.main.transform.Translate(new Vector3(0, 0, 150) * Time.deltaTime);
 		}
 		if(Input.GetAxis("Mouse ScrollWheel") < 0){
-			Camera.main.transform.Translate(new Vector3(0, 0, -100) * Time.deltaTime);
+			Camera.main.transform.Translate(new Vector3(0, 0, -150) * Time.deltaTime);
 		}
 
 		if (Input.GetMouseButton(1)){

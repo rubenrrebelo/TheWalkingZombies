@@ -25,15 +25,20 @@ public class ResourcesScript : MonoBehaviour {
 	}
 
 
-	public void catchResources(){
+	public float catchResources(){
 		//to make it "disappear"
-		if(!_dead){
+		_resourcesLevel -= 25.0f;
+
+		if(_resourcesLevel <= 0){
+			float ammountTaken = 25.0f + _resourcesLevel; 
 			_dead = true;
 			foreach(Transform child in transform){
 				Destroy(child.gameObject);
 			}
 			StartCoroutine("destroyAfterDeath");
-		}
+			return ammountTaken;
+		}else
+			return 25.0f;
 	}
 
 	private IEnumerator destroyAfterDeath(){

@@ -27,6 +27,8 @@ public class SurvivorScript: MonoBehaviour {
 	private const int CRITICAL_LEVEL = 1;
 	private const int NORMAL_LEVEL = 2;
 	private const int FULL_LEVEL = 3;
+	private const float RELOAD_SPEED_COLLECT = 1.0f;
+	private const float RELOAD_SPEED_ATTACK = 1.5f;
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
@@ -38,6 +40,7 @@ public class SurvivorScript: MonoBehaviour {
 	private string _state;
 	private bool _dead; //to prevent multiple destroyAfterDeath calls
 	private bool _isReloading; //checks if the survivor is realoading for his next attack
+	private bool _isReloadingCollect;
 	
 	//private bool _isCollecting;
 	
@@ -66,13 +69,15 @@ public class SurvivorScript: MonoBehaviour {
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
 		_attRange = 5.0f;
-		_resourceLevel = 0.0f;
+		_resourceLevel = 50.0f;
 		
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
 		_resourcesInSight = new List<GameObject>();
 		//_isCollecting = false;
 		_state = IDLE;
+		_isReloading = false;
+		_isReloadingCollect = false;
 
 		_dead = false;
 		
@@ -117,10 +122,9 @@ public class SurvivorScript: MonoBehaviour {
 	}
 
 	IEnumerator attackClosestZombie(GameObject nearestZombie){
-		//TODO: finish
 		_isReloading = true;
 		nearestZombie.GetComponent<ZombieScript>().loseHealth(_attDamage);
-		yield return new WaitForSeconds(1.5F);
+		yield return new WaitForSeconds(RELOAD_SPEED_ATTACK);
 		_isReloading = false;
 	}
 
@@ -132,12 +136,18 @@ public class SurvivorScript: MonoBehaviour {
 		_state = COLLECTING;
 		navMeshComp.SetDestination(nearestResource.transform.position);
 		_dist2Resource = Vector3.Distance(nearestResource.transform.position, this.transform.position);
-		if(_dist2Resource <= PICKUP_RANGE){
-			nearestResource.GetComponent<ResourcesScript>().catchResources();
+		if(!_isReloadingCollect && _dist2Resource <= PICKUP_RANGE){
+			StartCoroutine(collectDResource(nearestResource));
 		}
-		//---------------------------------------- TODO: FALTA ACTUALIZAR A VARIAVEL RESOURCE DO AGENTE
-
 	}
+
+	IEnumerator collectDResource(GameObject nearestResource){
+		_isReloadingCollect = true;
+		_resourceLevel += nearestResource.GetComponent<ResourcesScript>().catchResources();
+		yield return new WaitForSeconds(RELOAD_SPEED_COLLECT);
+		_isReloadingCollect = false;
+	}
+
 	//Deposit-Resources
 	private void DepositResources(){
 
@@ -595,7 +605,7 @@ public class SurvivorScript: MonoBehaviour {
 				        this.name + ": \n" +
 				        "State: " + _state +
 				        " \n" +
-				        "Resources: " + _resourcesInSight.Count +
+				        "Resources: " + _resourceLevel +
 				        " \n");
 			}
 		}
