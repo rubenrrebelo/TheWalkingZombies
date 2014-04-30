@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,15 +14,19 @@ public class ZombieScript: MonoBehaviour {
 	
 	private List<GameObject> _survivorsInSight;
 	private List<GameObject> _barriersInSight;
-	private GameObject _closestSurvivor;
-	private float dist2Survivor;
+	//private GameObject _closestSurvivor;
+	//private float dist2Survivor;
 	private bool _isReloading;
-	private bool _isFollowing;
+	//private bool _isFollowing;
 	private bool _dead;
+	private const string ATTACKING_B = "attackingBarrier";
+	private const string ATTACKING_S = "attackingSurvivor";
+	private const string IDLE = "idle";
 
 	private float infoBoxWidth = 150.0f;
 	private float infoBoxHeight = 60.0f;
 	private Vector3 currentScreenPos;
+	private string _state;
 
 	private NavMeshAgent navMeshComp;
 	private Vector3 CurrentDestination;
@@ -46,8 +50,9 @@ public class ZombieScript: MonoBehaviour {
 		_survivorsInSight = new List<GameObject>();
 		_barriersInSight = new List<GameObject>();
 		_isReloading = false;
-		_isFollowing = false;
+		//_isFollowing = false;
 		_dead = false;
+		_state = IDLE;
 
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
@@ -74,17 +79,74 @@ public class ZombieScript: MonoBehaviour {
 	}
 
 	//Actuadores-------------------------------------------------------------------
-	//TODO: Attack-Survivor
-	
-	
+	//Attack-Survivor
+	private void attackSurvivor(GameObject nearestSurvivor){
+		_state = ATTACKING_S;
+		navMeshComp.SetDestination(nearestSurvivor.transform.position);
+		
+		float _dist2Zombie = Vector3.Distance(nearestSurvivor.transform.position, this.transform.position);
+		if(!_isReloading && _dist2Zombie <= _attRange){
+			StartCoroutine(attackClosestSurvivor(nearestSurvivor));
+		}
+	}
+	IEnumerator attackClosestSurvivor(GameObject nearestSurvivor){
+		_isReloading = true;
+		nearestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
+	}
+	//Attack-BaseLeader
+	private void attackBaseLeader(GameObject nearestBaseleader){
+		_state = ATTACKING_S;
+		navMeshComp.SetDestination(nearestBaseleader.transform.position);
+		
+		float _dist2Zombie = Vector3.Distance(nearestBaseleader.transform.position, this.transform.position);
+		if(!_isReloading && _dist2Zombie <= _attRange){
+			StartCoroutine(attackClosestSurvivorB(nearestBaseleader));
+		}
+	}
+	IEnumerator attackClosestSurvivorB(GameObject nearestBaseleader){
+		_isReloading = true;
+		nearestBaseleader.GetComponent<BaseLeaderScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
+	}
+	//Attack-Barrier
+	private void attackBarrier(GameObject nearestBarrier){
+		_state = ATTACKING_B;
+		navMeshComp.SetDestination(nearestBarrier.transform.position);
+		
+		float _dist2Barrier = Vector3.Distance(nearestBarrier.transform.position, this.transform.position);
+		if(!_isReloading && _dist2Barrier <= _attRange){
+			StartCoroutine(attackClosestBarrier(nearestBarrier));
+		}
+	}
+	IEnumerator attackClosestBarrier(GameObject nearestBarrier){
+		_isReloading = true;
+		nearestBarrier.GetComponent<BarrierScript>().loseHealth(_attDamage);
+		yield return new WaitForSeconds(1.5F);
+		_isReloading = false;
+	}
+
+
+
+
+
 	//Random-Move
 	private void randomMove(){
 		/**/
+		if (!_state.Equals(IDLE)) {
+			CurrentDestination = this.transform.position;
+			_state = IDLE;
+		}
+		
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
+			
 			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
-		                                  ,transform.position.y,
-		                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			                                  ,transform.position.y,
+			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
 			navMeshComp.SetDestination(CurrentDestination);
+			timeWindow = PATH_RESET_TIME;
 		}
 		/**/
 		/** /
@@ -94,9 +156,81 @@ public class ZombieScript: MonoBehaviour {
 
 	//Sensores---------------------------------------------------------------------
 	//See-Survivor (posição do survivor mais próx)
+	//Survivor-Around
+	private bool SurvivorsAround(){
+		if (_survivorsInSight.Count > 0)
+			return true;
+		else
+			return false;
+	}
+	//Barrier-Around
+	private bool BarrierAround(){
+		if (_barriersInSight.Count > 0)
+			return true;
+		else
+			return false;
+	}
+	//BaseLeader-Around
+	private bool BaseLeaderAround(){
+
+		
+		foreach(GameObject survivor in _survivorsInSight){
+			if(survivor.tag.Equals("BaseLeader"))
+				return true;
+			
+		}
+		return false;
+	}
+	//Nearest survivor
+	private GameObject NearestSurvivor(){
+		GameObject _closestSurvivor = null;
+		
+		foreach(GameObject survivor in _survivorsInSight){
+			if(_closestSurvivor == null){
+				_closestSurvivor = survivor;
+			}else{
+				if (Vector3.Distance(_closestSurvivor.transform.position, this.transform.position) >
+				    Vector3.Distance(survivor.transform.position, this.transform.position))
+				{
+					_closestSurvivor = survivor;
+				}
+			}
+		}
+		return _closestSurvivor;
+	}
+	//Nearest Barrier
+	private GameObject NearestBarrier(){
+		GameObject _closestBarrier = null;
+		
+		foreach(GameObject barrier in _barriersInSight){
+			if(_closestBarrier == null){
+				_closestBarrier = barrier;
+			}else{
+				if (Vector3.Distance(_closestBarrier.transform.position, this.transform.position) >
+				    Vector3.Distance(barrier.transform.position, this.transform.position))
+				{
+					_closestBarrier = barrier;
+				}
+			}
+		}
+		return _closestBarrier;
+	}
+	//Nearest BaseLeader
+	private GameObject NearestBaseLeader(){
+		GameObject _closestSurvivor = null;
+		
+		foreach(GameObject survivor in _survivorsInSight){
+			if(survivor.tag.Equals("BaseLeader"))
+				_closestSurvivor=survivor;
+			
+		}
+		return _closestSurvivor;
+	}
 
 
-	//TODO: attack base lider also
+
+
+	// attack base lider also
 	void OnTriggerEnter (Collider other) {
 		if (other.tag.Equals("Survivor") || other.tag.Equals("BaseLeader") && !other.transform.root.Equals(this.transform.root)){
 			_survivorsInSight.Add(other.gameObject);
@@ -114,7 +248,7 @@ public class ZombieScript: MonoBehaviour {
 			_barriersInSight.Remove(other.gameObject);
 		}
 	}
-
+	/*
 	IEnumerator attackClosestSurvivor(){
 		_isReloading = true;
 		if(_closestSurvivor.tag.Equals("Survivor")){
@@ -154,7 +288,7 @@ public class ZombieScript: MonoBehaviour {
 			_closestSurvivor = null;
 		}
 	}
-
+	*/
 	private void checkImpossiblePathAndReset(){ //Calculates a new setDestination in case the previous calc isnt reached in a set reset time
 		timeWindow -= Time.deltaTime;
 		if(timeWindow < 0){
@@ -172,11 +306,11 @@ public class ZombieScript: MonoBehaviour {
 			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
 			if(showInfo){
 				//Zombie's Information Box
-				if(this.renderer.isVisible && _closestSurvivor != null){
+				if(this.renderer.isVisible && SurvivorsAround()){
 					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
 					        this.name + ": \n" +
 					        "Closest Survivor: \n" +
-					        _closestSurvivor.name + 
+					        NearestSurvivor().name + 
 					        " \n");
 				}else{
 					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
@@ -200,9 +334,24 @@ public class ZombieScript: MonoBehaviour {
 	void Update () {
 		if(!_dead){
 			checkImpossiblePathAndReset();
-			updateClosestSurvivor();
+			//updateClosestSurvivor();
 
-			if(_barriersInSight.Count != 0){
+			if(BarrierAround())
+			{
+				attackBarrier(NearestBarrier());
+			}
+			else if(BaseLeaderAround())
+			{
+				attackBaseLeader(NearestBaseLeader());
+			}
+			else if(SurvivorsAround())
+			{
+				attackSurvivor(NearestSurvivor());
+			}
+			else
+				randomMove();
+
+			/*if(_barriersInSight.Count != 0){
 				foreach(GameObject barrier in _barriersInSight){ //get any of the barriers
 					navMeshComp.SetDestination(barrier.transform.position); //move towards survivor
 					//attack him, it in range
@@ -229,7 +378,7 @@ public class ZombieScript: MonoBehaviour {
 					_isFollowing = false;
 			}else{
 				randomMove();
-			}
+			}*/
 			//DO NOT DELETE forces collision updates in every frame
 				this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.000001f);	
 		}else{
