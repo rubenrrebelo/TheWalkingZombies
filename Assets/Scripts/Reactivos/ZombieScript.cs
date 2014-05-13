@@ -169,8 +169,13 @@ public class ZombieScript: MonoBehaviour {
 	}
 	//Barrier-Around
 	private bool BarrierAround(){
-		if (_barriersInSight.Count > 0)
-			return true;
+		if (_barriersInSight.Count > 0) {
+			float distance2Barrier = Vector3.Distance(NearestBarrier().transform.position, this.transform.position);
+			if(distance2Barrier < 7){
+				return true;
+			}else
+				return false;
+		}
 		else
 			return false;
 	}
@@ -230,9 +235,6 @@ public class ZombieScript: MonoBehaviour {
 		}
 		return _closestSurvivor;
 	}
-
-
-
 
 	// attack base lider also
 	void OnTriggerEnter (Collider other) {

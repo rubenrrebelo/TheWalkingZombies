@@ -5,16 +5,12 @@ public class ResourcesScript : MonoBehaviour {
 
 	private float _resourcesLevel;
 	private bool _dead; //to prevent multiple destroyAfterDeath calls
-	Material transparentMaterial;
-
 
 	// Use this for initialization
 	void Start () {
 		_resourcesLevel = 150.0f;
 		_dead = false;
-		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
 	}
-	
 
 	// Update is called once per frame
 	void Update () {

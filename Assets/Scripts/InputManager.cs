@@ -67,7 +67,7 @@ public class InputManager : MonoBehaviour {
 
 		if (Input.GetMouseButton(1)){
 			// Change the direction of the camera according to the mouse movement
-			Camera.main.transform.rotation *= Quaternion.AngleAxis(Time.deltaTime * Input.GetAxis("Mouse Y") * 300, Vector3.left);
+			Camera.main.transform.rotation *= Quaternion.AngleAxis(Time.deltaTime * Input.GetAxis("Mouse Y") * 200, Vector3.left);
 			Camera.main.transform.RotateAround(new Vector3(0, 1.0f, 0), Time.deltaTime * Input.GetAxis("Mouse X") * 3);
 		}
 

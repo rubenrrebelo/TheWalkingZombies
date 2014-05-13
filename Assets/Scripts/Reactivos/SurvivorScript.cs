@@ -61,11 +61,8 @@ public class SurvivorScript: MonoBehaviour {
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
-
-	private GameObject myZombieBodyIfDead;
 	
 	void Start () {
-		
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
@@ -82,7 +79,6 @@ public class SurvivorScript: MonoBehaviour {
 		_isReloadingCollect = false;
 
 		_dead = false;
-		myZombieBodyIfDead = (GameObject)Resources.Load(@"Models/Zombie",typeof(GameObject));
 		
 		navMeshComp = GetComponent<NavMeshAgent>();
 		
