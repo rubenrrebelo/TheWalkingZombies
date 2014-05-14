@@ -225,7 +225,6 @@ public class BaseLeaderScript: MonoBehaviour {
 
 		if(this.renderer.isVisible && !_dead){
 			//Important, order matters!
-			//TODO: Finishbar
 			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
 			                         lifebar_lenght, 
 			                         lifebar_height), life_bar_red);

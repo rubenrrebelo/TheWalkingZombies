@@ -63,7 +63,8 @@ public class SurvivorScript: MonoBehaviour {
 	private Material transparentMaterial;
 	
 	void Start () {
-		_healthLevel = FULL_HEALTH;
+		//TODO: debug value, was full
+		_healthLevel = 40.0f;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
@@ -454,8 +455,6 @@ public class SurvivorScript: MonoBehaviour {
 		}else 
 			return true;
 	}
-
-	//TODO: investigar se moving tb torna mais efficiente
 
 	/// ////////
 	/// Coliders

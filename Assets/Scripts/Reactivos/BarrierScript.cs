@@ -89,7 +89,7 @@ public class BarrierScript: MonoBehaviour {
 
     public bool needRepair()
     {
-        return !_dead && _healthLevel < FULL_HEALTH && _healthLevel >= 0; // TODO: Repair always?
+        return !_dead && _healthLevel < FULL_HEALTH && _healthLevel >= 0; //TODO: Repair always?
     }
 
     public float getBarrierHealth()
