@@ -39,6 +39,10 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
 
+	//TODO: delete this, debug
+	private Material reloading_mat;
+	private Material zombie_mat;
+
 	void Awake(){
 		_survivorsInSight = new List<GameObject>();
 		navMeshComp = GetComponent<NavMeshAgent>();
@@ -46,6 +50,11 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 	}
 
 	void Start () {
+
+		//TODO: delete this, debug
+		reloading_mat = (Material)Resources.Load(@"Materials/Reloading_Zombie",typeof(Material));
+		zombie_mat = (Material)Resources.Load(@"Materials/Zombie_Test_Material",typeof(Material));
+
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
@@ -95,8 +104,10 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 	}
 	IEnumerator attackClosestSurvivor(GameObject nearestSurvivor){
 		_isReloading = true;
+		this.renderer.material = reloading_mat;
 		nearestSurvivor.GetComponent<Survivor_PlannedAtt>().loseHealth(_attDamage);
 		yield return new WaitForSeconds(1.5F);
+		this.renderer.material = zombie_mat;
 		_isReloading = false;
 	}
 	//Attack-BaseLeader
@@ -111,8 +122,10 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 	}
 	IEnumerator attackClosestSurvivorB(GameObject nearestBaseleader){
 		_isReloading = true;
+		this.renderer.material = reloading_mat;
 		nearestBaseleader.GetComponent<BaseLeaderScript>().loseHealth(_attDamage);
 		yield return new WaitForSeconds(1.5F);
+		this.renderer.material = zombie_mat;
 		_isReloading = false;
 	}
 	//Attack-Barrier
@@ -329,14 +342,15 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 	public void loseHealth(float ammount){
 		_healthLevel -= ammount;
 		if(_healthLevel <= 0 && !_dead){
-			Debug.Log(this.name + " died.");
+			//Debug.Log(this.name + " died.");
 			_dead = true;
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
 
 	private IEnumerator destroyAfterDeath(){
-		yield return new WaitForSeconds(1.0F);
+		//TODO: changed this, was 1.0f. needs testing might be too fast
+		yield return new WaitForSeconds(0.5F);
 		//Debug.Log("Destroyed: "+ this.name);
 		Destroy(this.gameObject);
 	}

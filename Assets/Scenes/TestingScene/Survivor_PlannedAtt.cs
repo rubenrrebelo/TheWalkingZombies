@@ -1,8 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
 public class Survivor_PlannedAtt: MonoBehaviour {
+	
+	public Transform sphere;
 	
 	public float _healthLevel;
 	public float _movSpeed;
@@ -14,10 +16,10 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	public Transform _BottomRightBase;
 	
 	private const float PICKUP_RANGE = 2.0f;
-
+	
 	//TODO: changed to debug, was 100
-	private const float FULL_HEALTH = 300.0f;
-
+	private const float FULL_HEALTH = 100.0f;
+	
 	private const float MAX_RESOURCES = 100.0f;
 	private const float CRITICAL_THRESHOLD = 40.0f;
 	private const string IDLE = "idle";
@@ -31,7 +33,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	private const int NORMAL_LEVEL = 2;
 	private const int FULL_LEVEL = 3;
 	private const float RELOAD_SPEED_COLLECT = 1.0f;
-
+	
 	//TODO: was changed
 	private const float RELOAD_SPEED_ATTACK = 3.0f;
 	
@@ -59,35 +61,49 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	private Vector3 CurrentDestination;
 	private float timeWindow;
 	private const float PATH_RESET_TIME = 5.0f;
-
+	
 	private bool showInfo;
 	private float lifebar_x_offset, lifebar_y_offset;
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
-
+	
+	private Material reloading_mat;
+	private Material survivor_mat;
+	
 	private bool _isInParty;
 	private bool _isPartyLeader;
 	private GameObject _partyLeader = null;
 	public GameObject _tank = null;
 	public ParticleSystem shots;
 	public bool _isTank;
+	public GameObject _focusTargetZombie = null;
+	private bool _firstTimeTanking; //this is to make sure the tank gets minion aggro
+	private bool _isSafe; //after tanking and becoming injured, he runs to the leader
+	
+	private bool deliberatingNextZombieTarget;
 	
 	void Start () {
-
+		
+		_isTank = false;
+		_firstTimeTanking = true;
+		_isSafe = false;
+		
+		
 		_healthLevel = FULL_HEALTH;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
-
+		
 		//TODO: was changed
-		_attRange = 15.0f;
-
+		_attRange = 17.0f;
+		
 		if(this.gameObject.name.Equals("SurvivorLeader")) _isPartyLeader = true;
 		_isInParty = true;
 		_partyLeader = GameObject.Find("SurvivorLeader");
 		_isTank = false;
-
+		deliberatingNextZombieTarget = false;
+		
 		_resourceLevel = 0.0f;
 		
 		_zombiesInSight = new List<GameObject>();
@@ -97,13 +113,13 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		_state = IDLE;
 		_isReloading = false;
 		_isReloadingCollect = false;
-
+		
 		_dead = false;
 		
 		navMeshComp = GetComponent<NavMeshAgent>();
 		
 		BaseLider = GameObject.FindWithTag("BaseLeader");
-
+		
 		SphereCollider visionRangeCollider = this.gameObject.GetComponentInChildren<SphereCollider>();
 		if(visionRangeCollider != null){
 			visionRangeCollider.radius = _visionRange;
@@ -117,6 +133,10 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		life_bar_red = (Texture2D)Resources.Load(@"Textures/life_bar_red", typeof(Texture2D));
 		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
 		
+		//TODO: dele this, debug
+		reloading_mat = (Material)Resources.Load(@"Materials/Reloading",typeof(Material));
+		survivor_mat = (Material)Resources.Load(@"Materials/Survivor_Test_Material",typeof(Material));
+		
 		lifebar_lenght = 30.0f;
 		lifebar_height = 2.0f;
 		lifebar_x_offset = -15.0f;
@@ -128,15 +148,17 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	}
 	
 	//Actuadores-------------------------------------------------------------------
-
+	
 	IEnumerator attackClosestZombie(GameObject nearestZombie){
 		_isReloading = true;
 		nearestZombie.GetComponent<Zombie_PlannedAtt>().loseHealth(_attDamage);
-		Instantiate (shots, this.transform.position, this.transform.rotation);
+		//Instantiate (shots, this.transform.position, this.transform.rotation);
+		this.renderer.material = reloading_mat;
 		yield return new WaitForSeconds(RELOAD_SPEED_ATTACK);
 		_isReloading = false;
+		this.renderer.material = survivor_mat;
 	}
-
+	
 	//Collect-Resources
 	private void CollectResources(GameObject nearestResource){
 		
@@ -149,35 +171,35 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			StartCoroutine(collectDResource(nearestResource));
 		}
 	}
-
+	
 	IEnumerator collectDResource(GameObject nearestResource){
 		_isReloadingCollect = true;
 		_resourceLevel += nearestResource.GetComponent<ResourcesScript>().catchResources();
 		yield return new WaitForSeconds(RELOAD_SPEED_COLLECT);
 		_isReloadingCollect = false;
 	}
-
+	
 	//Deposit-Resources
 	private void DepositResources(){
-
-			_state = DEPOSITING;
-			navMeshComp.SetDestination (depositPosition);
-			if ((depositPosition - transform.position).magnitude < 4) {
-				BaseLider.GetComponent<BaseLeaderScript>().addResources(_resourceLevel);
-				_resourceLevel = 0;
-				//navMeshComp.Stop();
-			}
+		
+		_state = DEPOSITING;
+		navMeshComp.SetDestination (depositPosition);
+		if ((depositPosition - transform.position).magnitude < 4) {
+			BaseLider.GetComponent<BaseLeaderScript>().addResources(_resourceLevel);
+			_resourceLevel = 0;
+			//navMeshComp.Stop();
+		}
 	}
 	// Heal
 	private void Heal(){
-
-			_state = HEALING;
-			navMeshComp.SetDestination (healPosition);
-			if ((healPosition - transform.position).magnitude < 4) {
-				_healthLevel = FULL_HEALTH;
-				//navMeshComp.Stop();
-			}
-
+		
+		_state = HEALING;
+		navMeshComp.SetDestination (healPosition);
+		if ((healPosition - transform.position).magnitude < 4) {
+			_healthLevel = FULL_HEALTH;
+			//navMeshComp.Stop();
+		}
+		
 		
 	}
 	//Move-to
@@ -185,10 +207,10 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		_state = MOVINGTO;
 		navMeshComp.SetDestination (position);
 	}
-
-
-
-
+	
+	
+	
+	
 	//Random-Move
 	private void randomMove(){
 		/**/
@@ -425,7 +447,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		}
 		return survivorInNeed.transform.position;
 	}
-
+	
 	private bool isAnySurvivorAttacking(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are attacking
@@ -446,7 +468,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		}else 
 			return true;
 	}
-
+	
 	private bool isAnySurvivorCollecting(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
@@ -467,11 +489,12 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		}else 
 			return true;
 	}
-
+	
+	//TODO:this was added
 	private Vector3 farthestKnownSurvivor(){
 		GameObject farthestSurvivor = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
-
+			
 			if(farthestSurvivor == null){
 				farthestSurvivor = survivor;
 			}else{ //chooses the closest survivor known to him
@@ -481,11 +504,11 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 					farthestSurvivor = survivor;
 				}
 			}
-
+			
 		}
 		return farthestSurvivor.transform.position;
 	}
-
+	
 	/// ////////
 	/// Coliders
 	/// ////////
@@ -573,7 +596,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			}
 		}
 	}
-
+	
 	public string getState(){
 		return _state;
 	}
@@ -592,14 +615,14 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
-
+	
 	private IEnumerator destroyAfterDeath(){
 		yield return new WaitForSeconds(3.0F);
 		//Debug.Log("Destroyed: "+ this.name);
 		Destroy(this.gameObject);
 	}
-
-
+	
+	
 	private void checkImpossiblePathAndReset(){//Calculates a new setDestination in case the previous calc isnt reached in a set reset time
 		timeWindow -= Time.deltaTime;
 		if(timeWindow < 0){
@@ -620,53 +643,53 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	
 	void OnGUI(){		
 		if(!_dead){
-		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
-		if(showInfo){
-			//Survivors's Information Box
+			currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
+			if(showInfo){
+				//Survivors's Information Box
+				
+				if(this.renderer.isVisible){
+					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
+					        this.name + ": \n" +
+					        "State: " + _state +
+					        " \n" +
+					        "Resources: " + _resourceLevel +
+					        " \n");
+				}
+			}
 			
 			if(this.renderer.isVisible){
-				GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-				        this.name + ": \n" +
-				        "State: " + _state +
-				        " \n" +
-				        "Resources: " + _resourceLevel +
-				        " \n");
+				//Important, order matters!
+				GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
+				                         lifebar_lenght, 
+				                         lifebar_height), life_bar_red);
+				GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
+				                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
+				                         lifebar_height), life_bar_green);
 			}
 		}
-		
-		if(this.renderer.isVisible){
-			//Important, order matters!
-			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset, 
-			                         lifebar_lenght, 
-			                         lifebar_height), life_bar_red);
-			GUI.DrawTexture(new Rect(currentScreenPos.x + lifebar_x_offset, Screen.height - currentScreenPos.y + lifebar_y_offset,
-			                         (FULL_HEALTH - (FULL_HEALTH - _healthLevel))*lifebar_lenght/FULL_HEALTH, 
-			                         lifebar_height), life_bar_green);
-		}
-			}
 	}
-
+	
 	//TODO: this was added
-	private void moveAwayFromZombie(){
-		Vector3 closestZombie = NearestZombiePosition ();
-		Vector3 destination = Vector3.Normalize (this.transform.position - closestZombie);
+	private void moveAwayFromZombie(GameObject zombie){
+		Vector3 zombiePos = zombie.transform.position;
+		Vector3 destination = this.transform.position - zombiePos;
+		destination.y = 0;
+		destination = Vector3.Normalize(destination);
 		navMeshComp.SetDestination (this.transform.position + destination);
 	}
-
-
-
+	
 	//TODO: this was added
 	private GameObject healthiestSurvivor(){
 		GameObject healthiestSurv = null;
 		float healthiestSurvHealth = 0.0f;
-
+		//TODO: change this!!! its not _survivorsInSight but a list of available team memmbers
 		foreach (GameObject newSurvivor in _survivorsInSight) {
 			//If its full health, pick the first one and return
 			float newSurvivorHealth = newSurvivor.GetComponent<Survivor_PlannedAtt>()._healthLevel;
 			if(newSurvivorHealth == FULL_HEALTH ){
 				return newSurvivor;
 			}
-
+			
 			if(healthiestSurv != null){
 				if (newSurvivorHealth > healthiestSurvHealth){
 					healthiestSurv = newSurvivor;
@@ -679,24 +702,29 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		}
 		return healthiestSurv;
 	}
-
+	
 	//TODO: this was created
 	private float distanceToZombie(GameObject zombie){
 		return Vector3.Distance(zombie.transform.position, this.transform.position);
 	}
-
+	
+	//TODO: this was created
+	private float distanceToSurvivor(GameObject survivor){
+		return Vector3.Distance(survivor.transform.position, this.transform.position);
+	}
+	
 	//TODO: this was changed
-	private void attackZombie(GameObject nearestZombie){
+	private void attackZombie(GameObject zombie){
 		_state = ATTACKING;
-		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
+		float _dist2Zombie = Vector3.Distance(zombie.transform.position, this.transform.position);
 		
-		if (_dist2Zombie > _attRange) {
-			navMeshComp.SetDestination (nearestZombie.transform.position);
+		if (_dist2Zombie > _attRange-1) {
+			navMeshComp.SetDestination (zombie.transform.position);
 		} else {
 			if (_isReloading) {
-				moveAwayFromZombie ();
+				moveAwayFromZombie (zombie);
 			} else {
-				StartCoroutine(attackClosestZombie(nearestZombie));
+				StartCoroutine(attackClosestZombie(zombie));
 			}
 		}
 	}
@@ -705,42 +733,46 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		_state = ATTACKING;
 		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
 		//TODO: should be changed
-		if (_dist2Zombie > 5.0f) {
+		if (_dist2Zombie > 15.0f) {
 			navMeshComp.SetDestination (nearestZombie.transform.position);
 		} else {
 			if (_isReloading) {
-				evadeManouvers ();
+				//evadeManouvers ();
+				moveAwayFromZombie(nearestZombie);
 			} else {
 				StartCoroutine(attackClosestZombie(nearestZombie));
 			}
 		}
 	}
-
-	//TODO: ths was added
+	
+	//TODO: this was added
 	//Ask lider to elect a new survivor for tank role
 	private void demandNewTank(){
 		_partyLeader.GetComponent<Survivor_PlannedAtt> ().reRollTank (this.gameObject);
 		_isTank = false;
 	}
-
-	//TODO: ths was added
+	
+	//TODO: this was added
 	//called by previous tank, this will force the choosing of a new one
 	public void reRollTank (GameObject previousTank){
 		if(_tank.Equals(previousTank)){
 			_tank = null;
 		}
 	}
-
+	
 	private bool _movingEvade = false;
-
+	
 	//TODO: this was added
 	private void evadeManouvers(){
 		if (!_movingEvade) {
 			Vector3 closestZombie = NearestZombiePosition ();
-			Vector3 destination = Vector3.Normalize (this.transform.position - closestZombie);
+			Vector3 destination = this.transform.position - closestZombie;
+			destination.y = 0;
+			destination = destination.normalized * 30;
+			
+			//Debug.Log ("set destination: " + destination.x + " " + destination.z);
 			
 			if (Random.Range (0, 2) == 1) {
-
 				StartCoroutine(rotateAndMoveTo(90.0f, destination));
 				//Debug.Log("Going Right!");
 			}else{
@@ -749,26 +781,91 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			}
 		}
 	}
-
-	//fini
+	
 	IEnumerator rotateAndMoveTo(float angle, Vector3 dest){
 		_movingEvade = true;
 		Vector3 rotatedVector = Quaternion.AngleAxis(angle, Vector3.up) * dest;
-		navMeshComp.SetDestination ((this.transform.position + rotatedVector) * 10);
-
-		Vector3 debug = (this.transform.position + rotatedVector) * 10;
-		Debug.Log ("set destination: " + debug.x + debug.z);
-		yield return new WaitForSeconds(2.0f);
+		navMeshComp.SetDestination ((this.transform.position + rotatedVector));
+		
+		yield return new WaitForSeconds(0.5f);
 		_movingEvade = false;
 	}
-
+	
 	//TODO: this was added
-	private
-
+	public void setGroupsFocusTarget(GameObject zombie2Focus){
+		_focusTargetZombie = zombie2Focus;
+		//TODO: change this!!! its not _survivorsInSight but a list of available team memmbers
+		foreach (GameObject survivorInTeam in _survivorsInSight) {
+			survivorInTeam.GetComponent<Survivor_PlannedAtt> ()._focusTargetZombie = zombie2Focus;
+		}
+	}
+	
+	//TODO: this was added
+	private void requestNewTargetForTeam(){
+		_partyLeader.GetComponent<Survivor_PlannedAtt> ().deliberateNextZombieTarget ();
+	}
+	
+	//TODO: this was added
+	//this makes it so that a zombie who escapes the tank aggro gets killed first, since the leader choses the closest zombie to the survivors, which usually is the one closest to the tank
+	public void deliberateNextZombieTarget(){
+		
+		if (!deliberatingNextZombieTarget) {
+			deliberatingNextZombieTarget = true;
+			GameObject nextZombie2Focus = null;
+			GameObject tempZombie;
+			float closestZombieDistanceOfParty = 1000.0f;
+			float closestZombieDistanceOfSurvivor;
+			
+			//TODO: change this!!! its not _survivorsInSight but a list of available team memmbers
+			foreach (GameObject survivorInTeam in _survivorsInSight) {
+				tempZombie = survivorInTeam.GetComponent<Survivor_PlannedAtt> ().NearestZombie ();
+				if(tempZombie != null){
+					closestZombieDistanceOfSurvivor = Vector3.Distance (
+						tempZombie.transform.position, 
+						survivorInTeam.transform.position);
+					
+					if (closestZombieDistanceOfParty > closestZombieDistanceOfSurvivor) {
+						closestZombieDistanceOfParty = closestZombieDistanceOfSurvivor;
+						nextZombie2Focus = tempZombie;
+					}
+				}
+			}
+			
+			if (nextZombie2Focus != null) {
+				//TODO: change this!!! its not _survivorsInSight but a list of available team memmbers
+				foreach (GameObject survivorInTeam in _survivorsInSight) {
+					survivorInTeam.GetComponent<Survivor_PlannedAtt> ()._focusTargetZombie = nextZombie2Focus;
+				}
+				//Debug.Log("Chose next target!");
+				deliberatingNextZombieTarget = false;
+			}
+		}
+	}
+	
+	//TODO: this was added
+	public void becomeTank(){
+		_isTank = true;
+		_firstTimeTanking = true;
+	}
+	
+	//TODO: this was added
+	private float distance2NearestTeamMember(){
+		float closestTeamMemberDistance = 1000.0f;
+		float tempDist;
+		
+		//TODO: change this!!! its not _survivorsInSight but a list of available team memmbers
+		foreach (GameObject survivorInTeam in _survivorsInSight) {
+			tempDist = Vector3.Distance(survivorInTeam.transform.position, this.transform.position);
+			if(closestTeamMemberDistance > tempDist){
+				closestTeamMemberDistance = tempDist;
+			}
+		}
+		return closestTeamMemberDistance;
+	}
+	
 	void Update () {
 		if(!_dead){
-
-
+			
 			//**/
 			//execute do plan(Intenção att grupo)
 			//TODO: this was added
@@ -776,50 +873,61 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			if(_isPartyLeader){
 				if(_tank == null){
 					_tank = healthiestSurvivor();
-					_tank.GetComponent<Survivor_PlannedAtt>()._isTank = true;
-					Debug.Log( _tank.name + " is now tanking!");
+					if(_tank != null){
+						_tank.GetComponent<Survivor_PlannedAtt>().becomeTank();
+						Debug.Log( _tank.name + " is now tanking!");
+					}
 				}
 			}
-			/**/
-
+			
 			if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
 			{
-				if(_tank){
-					attackZombieAsTank(NearestZombie());
+				if(_isTank){
+					if(_focusTargetZombie == null){
+						requestNewTargetForTeam();
+						attackZombieAsTank(NearestZombie());
+					}else{
+						
+						//TODO: delete, for debug
+						sphere.position = _focusTargetZombie.transform.position;
+						
+						
+						if(!_firstTimeTanking){
+							attackZombieAsTank(_focusTargetZombie);
+						}else{
+							MoveTo(_focusTargetZombie.transform.position);
+							if(distanceToZombie(_focusTargetZombie) < 7){
+								_firstTimeTanking = false;
+							}
+							attackZombieAsTank(_focusTargetZombie);
+						}
+					}
 				}else{
-					attackZombie(NearestZombie());
+					if(_focusTargetZombie == null){
+						attackZombie(NearestZombie());
+					}else{
+						attackZombie(_focusTargetZombie);
+					}
 				}
-			}
-			else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround()) 
+			}else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround() && !_isSafe)
 			{
-				MoveTo(farthestKnownSurvivor());
-				if(_tank){
+				
+				MoveTo(_partyLeader.transform.position);
+				if(distanceToSurvivor(_partyLeader) < 3){
+					_isSafe = true;
+				}
+				if(_isTank){
+					Debug.Log("Switch!");
 					demandNewTank();
 				}
-			}
-			else if(ZombiesAround() && (distanceToZombie(NearestZombie()) > 15.0f)){
+				
+				
+				
+			}else if(ZombiesAround() && (distanceToZombie(NearestZombie()) > 15.0f))
+			{
 				attackZombie(NearestZombie());
 			}
-
-			//fim do plano att em grupo
-			/**/
-
-
-			//reconsider
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+			
 			else if(!ZombiesAround() && LevelResources() != 0 && DepositInRange()) 
 			{
 				DepositResources();
@@ -828,34 +936,28 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			{
 				CollectResources(NearestResource());
 			}
-			else if(SurvivorsAround()){
+			else if(SurvivorsAround())
+			{
 				if(isAnySurvivorAttacking()){
 					MoveTo(anySurvivorAttacking());
 				}
 				else if (isAnySurvivorCollecting()){
 					MoveTo(anySurvivorCollecting());
 				}
-				/** /
-				//doesn't make it more efficient, map is less explored
-				else if(isAnySurvivorMoving()){
-					MoveTo(anySurvivorMoving);
-				}
-				/**/
 				else{
-
 					randomMove();
 				}
 			}
 			else
 				randomMove();
-
-				//avoid navmesh pathfinding issues
-				checkImpossiblePathAndReset();
-				//DO NOT DELETE This forces collision updates in every frame
-				this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-				//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
-
-		/**/
+			
+			//avoid navmesh pathfinding issues
+			checkImpossiblePathAndReset();
+			//DO NOT DELETE This forces collision updates in every frame
+			this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
+			//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
+			
+			/**/
 		}else{
 			this.renderer.material = transparentMaterial;
 			Destroy(this.GetComponent<NavMeshAgent>());
