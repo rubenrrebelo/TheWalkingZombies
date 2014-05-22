@@ -888,7 +888,6 @@ public class Survivor_Map: MonoBehaviour {
                     /**/
                     else
                     {
-
                         randomMove();
                     }
                 }

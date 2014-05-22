@@ -86,7 +86,7 @@ public class Zombie_PlannedAtt: MonoBehaviour {
 		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
 
 		lifebar_lenght = 30.0f;
-		lifebar_height = 3.5f;
+		lifebar_height = 2.0f;
 		lifebar_x_offset = -15.0f;
 		lifebar_y_offset = -8.0f;
 	}
