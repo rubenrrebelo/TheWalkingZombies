@@ -116,6 +116,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 
 		plan = new List<string>() ;
 		plan.Add ("superAttack");
+		//plan.Add ("superExplore");
 		
 		_resourceLevel = 0.0f;
 		
@@ -955,7 +956,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		}
 	}
 
-	private string instruction = "";
+	private string instructionName = "";
 	
 	public List<string> NewPlan(){
 		List<string> plan = new List<string>() ;
@@ -984,37 +985,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 	}
 
 
-
-	IEnumerator CicloBDI()
-	{
-		int i = 0, j = 0;
-		while (true)
-		{
-			//List<string> thePlan = NewPlan();
-			//Debug.Log("Plan " + i + " #" + plan.Count);
-			
-			while (j < plan.Count)
-			{
-				//Debug.Log("Plano " + i + " instrucao " + j);
-				
-				instruction = plan[j];
-				
-				_isExecutingAPlansIntruction = true;
-				
-				while (_isExecutingAPlansIntruction) { yield return null; };
-				
-
-				
-				j++;
-				
-				//yield return null;
-			}
-
-			i++;
-			j = 0;
-		}
-	}
-
+	
 	private void superAttack(){
 		/**/
 		//execute do plan(Intenção att grupo)
@@ -1065,12 +1036,12 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		{	
 			MoveTo (_partyLeader.transform.position);
 			if (distanceToSurvivor (_partyLeader) < 10) {
-					_isSafe = true;
+				_isSafe = true;
 				Debug.Log("I was saved! " + this.name);
 			}
 			if (_isTank) {
-					Debug.Log ("Switch!");
-					demandNewTank ();
+				Debug.Log ("Switch!");
+				demandNewTank ();
 			}
 		}
 		else if (ZombiesAround () && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround () && _isSafe) 
@@ -1089,7 +1060,7 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 			}else{
 				MoveTo(_tank.transform.position);
 			}
-
+			
 		}
 		else if(!ZombiesAround() && LevelResources() != 0 && DepositInRange()) 
 		{
@@ -1121,33 +1092,129 @@ public class Survivor_PlannedAtt: MonoBehaviour {
 		//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
 		
 		/**/
+		plan.Add ("superAttack");
+	}
+
+	/** /
+			Debug.Log ( "Desires: " + Desires);
+			Debug.Log ( "intention: " + intention);
+			//Debug.Log ( "intention: " + intention_position);
+			//Debug.Log ( "state: " + _state);
+
+			if(out_of_while){
+			Options();
+			filter();
+			Planner();
+
+				//Debug.Log("tou no execute: " + Plan.Count());
+			out_of_while = false;
+			}
+			else{
+		    
+			if(Plan.Count() != 0 && !succeced())
+			{
+					//Debug.Log("tou no execute: " + Plan[0]);
+
+
+					if(checkStepCompleted()){
+						Plan.RemoveAt(0);
+					}
+					else
+						Execute(Plan[0],intention_position);
+
+					if(reconsider()){
+						Options();
+						filter();
+						Planner();
+					}
+			}
+	/**/
+
+	private void superExplore(){
+		//codigo
+		
+		plan.Add ("superExplore");
 		
 	}
-	
+
+
+	private void Options(){
+
+	}
+
+	IEnumerator CicloBDI()
+	{
+
+		//Debug.Log ( "Desires: " + Desires);
+		//Debug.Log ( "intention: " + intention);
+		//Debug.Log ( "intention: " + intention_position);
+		//Debug.Log ( "state: " + _state);
+
+		while (true)
+		{
+			//List<string> thePlan = NewPlan();
+			//Debug.Log("Plan " + i + " #" + plan.Count);
+
+			/** /
+			Options();
+			filter();
+			Planner();
+			/**/
+
+			int instructionNumber = 0;
+			while (plan.Count != 0 
+			       /** /
+			       && 
+			       !succeced() &&
+			       !impossible ()
+					/**/
+					)
+			{
+				//Debug.Log("Plano " + i + " instrucao " + j);
+
+				instructionName = plan[0];
+				_isExecutingAPlansIntruction = true;
+				
+				while (_isExecutingAPlansIntruction 
+				       /** /
+				       &&
+				       !checkStepCompleted()
+				       /**/
+				       ) { 
+					yield return null; 
+				};
+
+				plan.RemoveAt(0);
+
+				/** /
+				if(reconsider()){
+					Options();
+					filter();
+					Planner();
+				}
+				/**/
+			}
+			instructionNumber = 0;
+		}
+	}
+
 	void Update () {
 		if(!_dead){
 			/**/
 			if (_isExecutingAPlansIntruction)
 			{
-				if (instruction == "I1")
-					{
-						Intruction1();
-						_isExecutingAPlansIntruction = false;
-					}
-					else if (instruction == "I2")
-					{
-						Intruction2();
-						_isExecutingAPlansIntruction = false;
-					}
-					else if (instruction == "superAttack")
-					{
-						superAttack();
-						_isExecutingAPlansIntruction = false;
-					}
+				if (instructionName == "superAttack")	
+				{
+					superAttack();
+					_isExecutingAPlansIntruction = false;
+				}
+				else if (instructionName == "superExplore")
+				{
+					superExplore();
+					_isExecutingAPlansIntruction = false;
+				}
 	        }
 	        /**/
-
-			 
 		}else{
 			this.renderer.material = transparentMaterial;
 			Destroy(this.GetComponent<NavMeshAgent>());
