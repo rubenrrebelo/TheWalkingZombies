@@ -144,7 +144,7 @@ public class Survivor_Leader: MonoBehaviour {
 
 	IEnumerator attackClosestZombie(GameObject nearestZombie){
 		_isReloading = true;
-		nearestZombie.GetComponent<Zombie_PlannedAtt>().loseHealth(_attDamage);
+		nearestZombie.GetComponent<ZombieScript>().loseHealth(_attDamage);
 		Instantiate (shots, this.transform.position, this.transform.rotation);
 		yield return new WaitForSeconds(RELOAD_SPEED_ATTACK);
 		_isReloading = false;
@@ -675,7 +675,7 @@ public class Survivor_Leader: MonoBehaviour {
 
 		foreach (GameObject newSurvivor in _survivorsInSight) {
 			//If its full health, pick the first one and return
-			float newSurvivorHealth = newSurvivor.GetComponent<Survivor_PlannedAtt>()._healthLevel;
+			float newSurvivorHealth = newSurvivor.GetComponent<SurvivorScript>()._healthLevel;
 			if(newSurvivorHealth == FULL_HEALTH ){
 				return newSurvivor;
 			}
