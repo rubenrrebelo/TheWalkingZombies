@@ -1689,15 +1689,15 @@ public class SurvivorScript: MonoBehaviour {
 				
 				if(renderer.isVisible){
 					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-					        name + ": \ n" +
+					        name + ": \n" +
 					        "State: " + _state +
-					        " \ n" +
+					        " \n" +
 					        "Resources: " + _resourceLevel +
-					        " \ n" +
+					        " \n" +
 					        "Intention: " + intention + 
-					        " \ n" +
+					        " \n" +
 					        "Step: " + Plan[0] + 
-					        " \ n");
+					        " \n");
 				}
 			}
 			
