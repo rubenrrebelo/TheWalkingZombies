@@ -20,6 +20,10 @@ public class ResourcesScript : MonoBehaviour {
 		this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
 	}
 
+    public float getResourcesLevel()
+    {
+        return _resourcesLevel;
+    }
 
 	public float catchResources(){
 		//to make it "disappear"

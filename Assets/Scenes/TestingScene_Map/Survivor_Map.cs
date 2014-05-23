@@ -79,14 +79,19 @@ public class Survivor_Map: MonoBehaviour {
     //Test
     public bool _hasMap = false;
 
-    private bool[][] _explorerMap;
-    
+    public int[][] _explorerMap;
+    private bool transmitedMap; //transmit map one time when in base
+
+    private GameObject mapObj;
     //END
 	
 	void Start () {
+
+        //TODO
+        mapObj = GameObject.Find("Map");
         
 		_healthLevel = FULL_HEALTH;
-		_movSpeed = 8.0f;
+		_movSpeed = 200.0f;
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
 
@@ -137,13 +142,13 @@ public class Survivor_Map: MonoBehaviour {
 		navMeshComp.speed = _movSpeed;
 
         //TODO: MAP
-        _explorerMap = new bool[Map.MAP_WIDTH][];
+        _explorerMap = new int[Map.MAP_WIDTH][];
         for (int i = 0; i < Map.MAP_WIDTH; i++)
         {
-            _explorerMap[i] = new bool[Map.MAP_HEIGHT];
+            _explorerMap[i] = new int[Map.MAP_HEIGHT];
             for (int j = 0; j < Map.MAP_HEIGHT; j++)
             {
-                _explorerMap[i][j] = false;
+                _explorerMap[i][j] = Map.MAP_EMPTY_POS;
             }
 
         }
@@ -225,9 +230,9 @@ public class Survivor_Map: MonoBehaviour {
 		
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
 			
-			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 100.0f, 100.0f)
 			                                  ,transform.position.y,
-			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			                                  transform.position.z + Random.Range (- 100.0f, 100.0f));
 			navMeshComp.SetDestination(CurrentDestination);
 			timeWindow = PATH_RESET_TIME;
 		}
@@ -633,9 +638,9 @@ public class Survivor_Map: MonoBehaviour {
 		timeWindow -= Time.deltaTime;
 		if(timeWindow < 0){
 			//Debug.Log("Reset needed by :" + this.name);
-			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
+			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 100.0f, 100.0f)
 			                                  ,transform.position.y,
-			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
+			                                  transform.position.z + Random.Range (- 100.0f, 100.0f));
 			navMeshComp.SetDestination(CurrentDestination);
 			timeWindow = PATH_RESET_TIME;
 		}
@@ -792,17 +797,28 @@ public class Survivor_Map: MonoBehaviour {
 	}
 
 	//TODO: this was added
-	
+
+    void LateUpdate()
+    {
+        if (_hasMap)
+        {
+            NavMeshHit hit;
+            navMeshComp.FindClosestEdge(out hit);
+            //GameObject.Find("SpherePoint").transform.position = hit.position + new Vector3(0, 30, 0);
+            //Debug.Log(hit.distance);
+
+            if (hit.distance < 4)
+                DiscoveredMapPosition(transform.position, NearestResource(), Map.MAP_LIMIT_POS);
+            else
+                DiscoveredMapPosition(transform.position, NearestResource(), Map.MAP_NORMAL_POS);
+
+        }
+    }
 
 	void Update () {
  
             if (!_dead)
             {
-
-                if (_hasMap)
-                {
-                    DiscoveredMapPosition(transform.position);
-                }
 
                 //**/
                 //execute do plan(Intenção att grupo)
@@ -851,7 +867,16 @@ public class Survivor_Map: MonoBehaviour {
 
 
 
-
+                //TODO MAP SHARE
+                if (IsInBase() && !transmitedMap)
+                {
+                    UpdateMyMap(BaseLider.GetComponent<BaseLeaderScript>().TransmitMap(_explorerMap));
+                    transmitedMap = true;
+                }
+                else if (!IsInBase() && transmitedMap)
+                {
+                    transmitedMap = false;
+                }
 
 
 
@@ -888,11 +913,37 @@ public class Survivor_Map: MonoBehaviour {
                     /**/
                     else
                     {
-                        randomMove();
+                        //randomMove();
+                        Vector3 dest = new Vector3(transform.position.x + Random.Range(-100.0f, 100.0f)
+                                              , transform.position.y,
+                                              transform.position.z + Random.Range(-100.0f, 100.0f));
+                        int ff = 0;
+                        while (getMapPositionInfoExplored(dest) && ff < 5)
+                        {
+                            ff++;
+                            dest = new Vector3(transform.position.x + Random.Range(-100.0f, 100.0f)
+                                             , transform.position.y,
+                                             transform.position.z + Random.Range(-100.0f, 100.0f));
+                        }
+                        MoveTo(dest);
                     }
                 }
                 else
-                    randomMove();
+                {
+                    //randomMove();
+                    Vector3 dest = new Vector3(transform.position.x + Random.Range(-200.0f, 200.0f)
+                                              , transform.position.y,
+                                              transform.position.z + Random.Range(-200.0f, 200.0f));
+                    int ff = 0;
+                    while (getMapPositionInfoExplored(dest) && ff < 5)
+                    {
+                        ff++;
+                        dest = new Vector3(transform.position.x + Random.Range(-200.0f, 200.0f)
+                                         , transform.position.y,
+                                         transform.position.z + Random.Range(-200.0f, 200.0f));
+                    }
+                    MoveTo(dest);
+                }
 
                 //avoid navmesh pathfinding issues
                 checkImpossiblePathAndReset();
@@ -912,29 +963,64 @@ public class Survivor_Map: MonoBehaviour {
 	}
 
     //TODO: MAP
-    private bool DiscoveredMapPosition(Vector3 position)
+    private bool DiscoveredMapPosition(Vector3 position, GameObject resourceObj, int type)
     {
         int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
         int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
 
-        if (_explorerMap[x][y])
+
+        float resourceLevel;
+
+        if (resourceObj != null)
+            resourceLevel = resourceObj.GetComponent<ResourcesScript>().getResourcesLevel();
+        else
+            resourceLevel = 0;
+
+
+        mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
+
+        if (_explorerMap[x][y] != 0)
+        {
+            
+            _explorerMap[x][y] = (_explorerMap[x][y] < resourceLevel) ? _explorerMap[x][y] : (int) resourceLevel;
             return false;
+        }
+            
 
         //Debug.Log("Discovered Map Position " + new Vector2(x, y) + " from " + position);
 
-        GameObject.Find("Map").GetComponent<Map>().UpdateMap(gameObject.name, _explorerMap, new Vector2(x, y));
-
-        _explorerMap[x][y] = true;
+        _explorerMap[x][y] = (_explorerMap[x][y] < resourceLevel) ? _explorerMap[x][y] : (int)resourceLevel;
         return true;
     }
 
-    public void TransmiteMap(bool[][] newMap)
+    public void UpdateMyMap(int[][] newMap)
     {
-        for (int i = 0; i < Map.MAP_WIDTH; i++)
-            for (int j = 0; j < Map.MAP_HEIGHT; j++)
-                _explorerMap[i][j] |= newMap[i][j];
+        _explorerMap = newMap;
     }
-    //END
+
+    private bool getMapPositionInfoExplored(Vector3 position)
+    {
+        int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
+        int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
+
+        return _explorerMap[x][y] != Map.MAP_EMPTY_POS;
+    }
+
+    private float getMapPositionInfoResources(Vector3 position)
+    {
+        int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
+        int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
+
+        if (_explorerMap[x][y] > 0)
+        {
+            return _explorerMap[x][y];
+        }
+        else
+            return 0;
+    }
+
+
+    //END MAP
 
     /** /
     IEnumerator CicloBDI()
