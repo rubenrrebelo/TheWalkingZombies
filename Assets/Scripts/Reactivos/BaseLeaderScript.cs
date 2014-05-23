@@ -26,6 +26,12 @@ public class BaseLeaderScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
     //private List<GameObject> _barriersInSight;
 
+    private const int MIN_TEAM_MEMBERS = 5;
+	private List<GameObject> _queuedFutureTeamMembers;
+	private GameObject _nextFutureTeamLeader;
+	private int _numberFutureTeamMembers;
+
+
     private GameObject _barrier1;
     private GameObject _barrier2;
 	
@@ -51,6 +57,11 @@ public class BaseLeaderScript: MonoBehaviour {
 		_visionRange = 10.0f;
 
 		_dead = false;
+
+        _queuedFutureTeamMembers = new List<GameObject>();
+        _nextFutureTeamLeader = null;
+        _numberFutureTeamMembers = 0;
+
 
 		_zombiesInSight = new List<GameObject>();
 		_survivorsInSight = new List<GameObject>();
@@ -80,6 +91,9 @@ public class BaseLeaderScript: MonoBehaviour {
         // Set Map
         mapObj = GameObject.Find("Map");
         resetMap();
+
+        //TeamMembersQueue
+        _queuedFutureTeamMembers = new List<GameObject>();
 	}
 
     private void resetMap()
@@ -224,6 +238,44 @@ public class BaseLeaderScript: MonoBehaviour {
 		}
 	}
 
+    public void QueueFutureTeamMember(GameObject survivor){
+		if(!_queuedFutureTeamMembers.Contains(survivor)){
+			_queuedFutureTeamMembers.Add(survivor);
+		}
+	}
+
+    public void QueueRemoveTeamMember(GameObject survivor)
+    {
+        if (_queuedFutureTeamMembers.Contains(survivor))
+        {
+            _queuedFutureTeamMembers.Remove(survivor);
+        }
+    }
+
+	private void processTeams(){
+        if (_queuedFutureTeamMembers.Count > (MIN_TEAM_MEMBERS + 1))
+        {
+            List<GameObject> team = new List<GameObject>();
+
+			//pick one of the survivors randomly to become the first team member
+			_nextFutureTeamLeader = _queuedFutureTeamMembers[0];
+			_queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
+
+            for (int i = 1; i < (MIN_TEAM_MEMBERS + 1); i++)
+            {
+                team.Add(_queuedFutureTeamMembers[i]);
+                _queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
+            }
+
+            _nextFutureTeamLeader.GetComponent<SurvivorScript>().BecomePartyLeader(team);
+
+            for (int i = 1; i < MIN_TEAM_MEMBERS; i++)
+            {
+                team[i].GetComponent<SurvivorScript>().BecomePartyMember(_nextFutureTeamLeader, team);
+            }
+		}
+	}
+	
 
 	void OnGUI(){		
 		currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
@@ -260,6 +312,7 @@ public class BaseLeaderScript: MonoBehaviour {
 	
 	void Update () {
 
+        processTeams();
 
 		ResourceDecay ();
 
@@ -340,7 +393,7 @@ public class BaseLeaderScript: MonoBehaviour {
         else
             resourceLevel = 0;
 
-        mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
+        //mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
 
         if (_explorerMap[x][y] != 0)
         {
