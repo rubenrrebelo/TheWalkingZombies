@@ -1068,7 +1068,7 @@ public class SurvivorScript: MonoBehaviour {
 			Desires.Add (EXPLORE_SOLO);
 			//Desires.Add (
 
-		if (IsInParty () && ZombiesAround () && _survivorsInTeam >= _minTeamMembers) {
+		if (IsInParty () && ZombiesAround () && _survivorsInTeam.Count >= _minTeamMembers) {
 			Desires.Add (ATTACK_ZOMBIE_AS_GROUP);
 		}
 

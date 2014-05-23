@@ -37,6 +37,11 @@ public class BaseLeaderScript: MonoBehaviour {
 	private float lifebar_x_offset, lifebar_y_offset;
 	private Texture2D life_bar_green, life_bar_red, resource_bar_blue;
 	private float lifebar_lenght, lifebar_height;
+
+    public bool _hasMap = false;
+    public int[][] _explorerMap;
+
+    private GameObject mapObj;
 	
 	void Start () {
 
@@ -72,8 +77,24 @@ public class BaseLeaderScript: MonoBehaviour {
 		lifebar_x_offset = -15.0f;
 		lifebar_y_offset = -8.0f;
 
-	
+        // Set Map
+        mapObj = GameObject.Find("Map");
+        resetMap();
 	}
+
+    private void resetMap()
+    {
+        _explorerMap = new int[Map.MAP_WIDTH][];
+        for (int i = 0; i < Map.MAP_WIDTH; i++)
+        {
+            _explorerMap[i] = new int[Map.MAP_HEIGHT];
+            for (int j = 0; j < Map.MAP_HEIGHT; j++)
+            {
+                _explorerMap[i][j] = Map.MAP_EMPTY_POS;
+            }
+
+        }
+    }
 	
 	//Actuadores-------------------------------------------------------------------
 	//Repair-Barrier1
@@ -300,5 +321,74 @@ public class BaseLeaderScript: MonoBehaviour {
 		Time.timeScale = 0;
 
 	}
+
+    void LateUpdate()
+    {
+        DiscoveredMapPosition(transform.position, null, Map.MAP_LIMIT_POS);
+    }
+
+    private bool DiscoveredMapPosition(Vector3 position, GameObject resourceObj, int type)
+    {
+        int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
+        int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
+
+
+        float resourceLevel;
+
+        if (resourceObj != null)
+            resourceLevel = resourceObj.GetComponent<ResourcesScript>().getResourcesLevel();
+        else
+            resourceLevel = 0;
+
+        mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
+
+        if (_explorerMap[x][y] != 0)
+        {
+            _explorerMap[x][y] = (_explorerMap[x][y] < resourceLevel) ? _explorerMap[x][y] : (int)resourceLevel;
+            return false;
+        }
+
+
+        //Debug.Log("Discovered Map Position " + new Vector2(x, y) + " from " + position);
+
+        _explorerMap[x][y] = (_explorerMap[x][y] < resourceLevel) ? _explorerMap[x][y] : (int)resourceLevel;
+        return true;
+    }
+
+    public int[][] TransmitMap(int[][] newMap)
+    {
+        for (int i = 0; i < Map.MAP_WIDTH; i++)
+        {
+            for (int j = 0; j < Map.MAP_HEIGHT; j++)
+            {
+                if (newMap[i][j] >= 0 && newMap[i][j] < _explorerMap[i][j])
+                    _explorerMap[i][j] = newMap[i][j];
+            }
+        }
+
+        //GameObject.Find("Map").GetComponent<Map>().UpdateTheMap(gameObject.name, _explorerMap);
+        return _explorerMap;
+    }
+
+    private bool getMapPositionInfoExplored(Vector3 position)
+    {
+        int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
+        int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
+
+        return _explorerMap[x][y] != Map.MAP_EMPTY_POS;
+    }
+
+    private float getMapPositionInfoResources(Vector3 position)
+    {
+        int x = (int)position.x / Map.MAP_QUAD_DIMENSIONS + Map.MAP_WIDTH / 2;
+        int y = (int)position.z / Map.MAP_QUAD_DIMENSIONS + Map.MAP_HEIGHT / 2;
+
+        if (_explorerMap[x][y] > 0)
+        {
+            return _explorerMap[x][y];
+        }
+        else
+            return 0;
+    }
 
 }
