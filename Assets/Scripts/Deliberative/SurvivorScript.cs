@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class SurvivorScript: MonoBehaviour {
-
+	
 	public Transform sphere;
-
+	
 	public float _healthLevel;
 	public float _movSpeed;
 	public float _visionRange;
@@ -44,8 +44,8 @@ public class SurvivorScript: MonoBehaviour {
 	private bool _dead; //to prevent multiple destroyAfterDeath calls
 	private bool _isReloading; //checks if the survivor is realoading for his next attack
 	private bool _isReloadingCollect;
-
-
+	
+	
 	private Material reloading_mat;
 	private Material survivor_mat;
 	
@@ -61,14 +61,14 @@ public class SurvivorScript: MonoBehaviour {
 	private List<GameObject> _survivorsInTeam;
 	
 	private bool _movingEvade = false;
-
+	
 	private bool _oneSuperStepExecuted = false; //for superFunctions, to use at checkStepCompleted
-
+	
 	private bool deliberatingNextZombieTarget;
-
+	
 	
 	//private bool _isCollecting;
-
+	
 	//TODO: variaveis deliberativo
 	
 	// estado interno
@@ -79,7 +79,7 @@ public class SurvivorScript: MonoBehaviour {
 	private List<string> Plan;
 	
 	private List<Desire> Desires_W;
-
+	
 	private int _minTeamMembers;
 	
 	public string intention;
@@ -112,10 +112,10 @@ public class SurvivorScript: MonoBehaviour {
 	private const string RANDOM_MOVE_TO_PLAN = "random_move";
 	private const string ATTACK_PLAN_GROUP = "superAttack";
 	private const string EXPLORE_PLAN_GROUP = "superExplore";
-
+	
 	private bool lider_request_defend;
 	private bool lider_request_resources;
-
+	
 	private GameObject BaseLider;
 	
 	private float infoBoxWidth = 100.0f;
@@ -135,7 +135,7 @@ public class SurvivorScript: MonoBehaviour {
 	private Material transparentMaterial;
 	
 	void Start () {
-	
+		
 		/** /
 			if(gameObject.name.Equals("SurvivorLeader")) _isPartyLeader = true;
 			_isInParty = true;
@@ -144,11 +144,11 @@ public class SurvivorScript: MonoBehaviour {
 			deliberatingNextZombieTarget = false;
 			_survivorsInTeam = new List<GameObject>();
 		/**/
-
+		
 		//TODO: dele this, debug
 		reloading_mat = (Material)Resources.Load(@"Materials/Reloading",typeof(Material));
 		survivor_mat = (Material)Resources.Load(@"Materials/Survivor_Test_Material",typeof(Material));
-
+		
 		_healthLevel = 100.0f;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
@@ -166,8 +166,8 @@ public class SurvivorScript: MonoBehaviour {
 		out_of_while = true;
 		
 		// Deliberativo
-
-
+		
+		
 		_minTeamMembers = 3;
 		
 		Desires = new List<string>();
@@ -179,7 +179,7 @@ public class SurvivorScript: MonoBehaviour {
 		intention_position = Vector3.zero;
 		lider_request_defend = false;
 		lider_request_resources = false;
-
+		
 		_dead = false;
 		
 		navMeshComp = GetComponent<NavMeshAgent>();
@@ -220,10 +220,10 @@ public class SurvivorScript: MonoBehaviour {
 		
 		if (_dist2Zombie > _attRange - 1) {
 			navMeshComp.SetDestination (zombie.transform.position);
-		} else {
+		}  else {
 			if (_isReloading) {
 				moveAwayFromZombie (NearestZombie());
-			} else {
+			}  else {
 				StartCoroutine(attackClosestZombie(zombie));
 			}
 		}
@@ -280,7 +280,7 @@ public class SurvivorScript: MonoBehaviour {
 			_healthLevel = FULL_HEALTH;
 			//navMeshComp.Stop();
 		}
-
+		
 	}
 	//Move-to
 	private void MoveTo(Vector3 position){
@@ -345,7 +345,7 @@ public class SurvivorScript: MonoBehaviour {
 		else
 			return false;
 	}
-
+	
 	//is-In-Group
 	private bool IsInParty(){
 		if (_isInParty) {
@@ -353,7 +353,7 @@ public class SurvivorScript: MonoBehaviour {
 		}else
 			return false;
 	}
-
+	
 	//Resources-Around?
 	private bool ResourcesAround(){
 		if (_resourcesInSight.Count > 0)
@@ -503,7 +503,7 @@ public class SurvivorScript: MonoBehaviour {
 			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
-				}else{ //chooses the closest survivor to him that is collecting
+				}else{  //chooses the closest survivor to him that is collecting
 					if (Vector3.Distance(survivorInNeed.transform.position, transform.position) >
 					    Vector3.Distance(survivor.transform.position, transform.position))
 					{
@@ -522,7 +522,7 @@ public class SurvivorScript: MonoBehaviour {
 			if( survivor.GetComponent<SurvivorScript>().intention.Equals(ATTACK_ZOMBIE)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
-				}else{ //chooses the closest survivor to him that is attacking
+				}else{  //chooses the closest survivor to him that is attacking
 					if (Vector3.Distance(survivorInNeed.transform.position, transform.position) >
 					    Vector3.Distance(survivor.transform.position, transform.position))
 					{
@@ -540,7 +540,7 @@ public class SurvivorScript: MonoBehaviour {
 			if( survivor.GetComponent<SurvivorScript>().intention.Equals(ATTACK_ZOMBIE)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
-				}else{ //chooses the closest survivor to him that is attacking
+				}else{  //chooses the closest survivor to him that is attacking
 					if (Vector3.Distance(survivorInNeed.transform.position, transform.position) >
 					    Vector3.Distance(survivor.transform.position, transform.position))
 					{
@@ -561,7 +561,7 @@ public class SurvivorScript: MonoBehaviour {
 			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
-				}else{ //chooses the closest survivor to him that is collecting
+				}else{  //chooses the closest survivor to him that is collecting
 					if (Vector3.Distance(survivorInNeed.transform.position, transform.position) >
 					    Vector3.Distance(survivor.transform.position, transform.position))
 					{
@@ -666,9 +666,9 @@ public class SurvivorScript: MonoBehaviour {
 		return false;
 		
 	}
-
+	
 	private bool isHereSurvivorCritical(){
-
+		
 		foreach (GameObject sur in _survivorsInSight) {
 			if (sur.GetComponent<SurvivorScript> ().LevelHealth () == CRITICAL_LEVEL) {
 				return true;
@@ -677,7 +677,7 @@ public class SurvivorScript: MonoBehaviour {
 		return false;
 		
 	}
-
+	
 	//TODO:this was added
 	private void informTeamThatImTheLeader(){
 		//Debug.Log ("I was given a team of " + _survivorsInTeam.Count + " people.");
@@ -688,7 +688,7 @@ public class SurvivorScript: MonoBehaviour {
 		}
 		//Debug.Log (names);
 		
-	} 
+	}  
 	
 	//TODO:this was added
 	public void receivePreviousTeamLeaderKnowledge(List<GameObject> previousKnownTeam){
@@ -711,7 +711,7 @@ public class SurvivorScript: MonoBehaviour {
 			_nextPartyLeader.GetComponent<SurvivorScript> ().receivePreviousTeamLeaderKnowledge (_survivorsInTeam);
 		}
 	}
-
+	
 	//TODO: this was added
 	private void evadeManouvers(GameObject zombie){
 		if (!_movingEvade) {
@@ -811,66 +811,66 @@ public class SurvivorScript: MonoBehaviour {
 		return healthiestSurv;
 	}
 	
-
+	
 	private float distanceToZombie(GameObject zombie){
 		return Vector3.Distance(zombie.transform.position, transform.position);
 	}
-
+	
 	private float distanceToSurvivor(GameObject survivor){
 		return Vector3.Distance(survivor.transform.position, transform.position);
 	}
-
+	
 	private void attackZombieAsTank(GameObject nearestZombie){
 		_state = ATTACKING;
 		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, transform.position);
 		//TODO: should be changed
 		if (_dist2Zombie > 10.0f) {
 			navMeshComp.SetDestination (nearestZombie.transform.position);
-		} else {
+		}  else {
 			if (_isReloading) {
 				if(Random.Range(0,6) != 0){
 					evadeManouvers(nearestZombie);
 				}else{
 					moveAwayFromZombie(nearestZombie);
 				}
-			} else {
+			}  else {
 				StartCoroutine(attackClosestZombie(nearestZombie));
 			}
 		}
 	}
-
+	
 	//Ask lider to elect a new survivor for tank role
 	private void demandNewTank(){
 		_partyLeader.GetComponent<SurvivorScript> ().reRollTank (gameObject);
 		_isTank = false;
 	}
-
+	
 	//called by previous tank, this will force the choosing of a new one
 	public void reRollTank (GameObject previousTank){
 		if(_tank.Equals(previousTank)){
 			_tank = null;
 		}
 	}
-
+	
 	private void requestNewTargetForTeam(){
 		_partyLeader.GetComponent<SurvivorScript> ().deliberateNextZombieTarget ();
 	}
-
+	
 	private void getNewTeamTarget(){
 		_partyLeader.GetComponent<SurvivorScript> ().checkDeliberateNextZombieTarget ();
 	}
-
+	
 	public void checkDeliberateNextZombieTarget(){
 		if (_focusTargetZombie != null) {
 			foreach (GameObject survivorInTeam in _survivorsInTeam) {
 				survivorInTeam.GetComponent<SurvivorScript> ()._focusTargetZombie = _focusTargetZombie;
 			}
-		} else {
+		}  else {
 			deliberateNextZombieTarget();
 		}
 	}
 	
-
+	
 	//this makes it so that a zombie who escapes the tank aggro gets killed first, 
 	//since the leader choses the closest zombie to the survivors, which usually is the one closest to the tank
 	public void deliberateNextZombieTarget(){
@@ -906,12 +906,12 @@ public class SurvivorScript: MonoBehaviour {
 			}
 		}
 	}
-
+	
 	public void becomeTank(){
 		_isTank = true;
 		_firstTimeTanking = true;
 	}
-
+	
 	private float distance2NearestTeamMember(){
 		float closestTeamMemberDistance = 1000.0f;
 		float tempDist;
@@ -924,7 +924,7 @@ public class SurvivorScript: MonoBehaviour {
 		}
 		return closestTeamMemberDistance;
 	}
-
+	
 	private void sayMyLastWords(){
 		_partyLeader.GetComponent<SurvivorScript> ().ISeeDeadPeople(gameObject);
 		foreach (GameObject survivorInMyteam in _survivorsInTeam) {
@@ -938,29 +938,29 @@ public class SurvivorScript: MonoBehaviour {
 			_nextPartyLeader = healthiestSurvivorInTeamNotTanking();
 		}
 	}
-
+	
 	private void superExplore(){
 		//leader defines area that will be explored.
-
-
+		
+		
 		// group moves as one to the area
-
-
+		
+		
 		//when enough area was discovered, everyone returns to base
-
-
-
-
+		
+		
+		
+		
 		_oneSuperStepExecuted = true;
 		Plan.Add ("superExplore");
 	}
-
-
+	
+	
 	private void superAttack(){
-		//execute do plan(Intenção att grupo)
-
+		//execute do plan(Intençã att grupo)
+		
 		_oneSuperStepExecuted = false;
-
+		
 		if (_isPartyLeader) {
 			if (_tank == null) {
 				_tank = healthiestSurvivorInTeam ();
@@ -973,36 +973,36 @@ public class SurvivorScript: MonoBehaviour {
 				_nextPartyLeader = healthiestSurvivorInTeamNotTanking ();
 			}
 		}
-
+		
 		if (ZombiesAround () && LevelHealth () != CRITICAL_LEVEL) {
 			if (_isTank) {
 				if (_focusTargetZombie == null) {
 					//requestNewTargetForTeam ();
 					getNewTeamTarget ();
 					attackZombieAsTank (NearestZombie ());
-				} else {
+				}  else {
 					//TODO: delete, for debug
 					sphere.position = _focusTargetZombie.transform.position;
-
+					
 					if (!_firstTimeTanking) {
 						attackZombieAsTank (_focusTargetZombie);
-					} else {
+					}  else {
 						MoveTo (_focusTargetZombie.transform.position);
 						if (distanceToZombie (_focusTargetZombie) < 7) {
-								_firstTimeTanking = false;
+							_firstTimeTanking = false;
 						}
 						attackZombieAsTank (_focusTargetZombie);
 					}
 				}
-			} else {
+			}  else {
 				if (_focusTargetZombie == null) {
-						getNewTeamTarget ();
-						attackZombie (NearestZombie ());
-				} else {
-						attackZombie (_focusTargetZombie);
+					getNewTeamTarget ();
+					attackZombie (NearestZombie ());
+				}  else {
+					attackZombie (_focusTargetZombie);
 				}
 			}
-		} else if (ZombiesAround () && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround () && !_isSafe) {	
+		}  else if (ZombiesAround () && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround () && !_isSafe) {	
 			MoveTo (_partyLeader.transform.position);
 			if (distanceToSurvivor (_partyLeader) < 10) {
 				_isSafe = true;
@@ -1012,24 +1012,24 @@ public class SurvivorScript: MonoBehaviour {
 				Debug.Log ("Switch!");
 				demandNewTank ();
 			}
-		} else if (ZombiesAround () && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround () && _isSafe) {
+		}  else if (ZombiesAround () && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround () && _isSafe) {
 			if (_focusTargetZombie == null) {
-					getNewTeamTarget ();
-					attackZombie (NearestZombie ());
-			} else {
-					attackZombie (_focusTargetZombie);
+				getNewTeamTarget ();
+				attackZombie (NearestZombie ());
+			}  else {
+				attackZombie (_focusTargetZombie);
 			}
-		} else if (!ZombiesAround () && !ResourcesAround ()) {
+		}  else if (!ZombiesAround () && !ResourcesAround ()) {
 			if (_tank == null) {
 				MoveTo (_partyLeader.transform.position);
-			} else {
+			}  else {
 				MoveTo (_tank.transform.position);
 			}
 		}
 		_oneSuperStepExecuted = true;
 		Plan.Add ("superAttack");
 	}
-
+	
 	
 	
 	void Options(){
@@ -1083,12 +1083,12 @@ public class SurvivorScript: MonoBehaviour {
 		//TODO
 		if(intention == IDLE)  	
 			Desires.Add (EXPLORE_SOLO);
-
-
+		
+		
 		if (IsInParty ()) {
 			Desires.Add (ATTACK_ZOMBIE_AS_GROUP);
 		}
-
+		
 		Desires.Add (IDLE);
 	}
 	
@@ -1128,7 +1128,7 @@ public class SurvivorScript: MonoBehaviour {
 			/*if(intention == ATTACK_ZOMBIE){
 				Desires_W.Add(new Desire(ATTACK_ZOMBIE,68));
 				Debug.Log("tou a considerar atacar");
-			}*/
+			} */
 			if(ZombiesAround())
 				Desires_W.Add(new Desire(ATTACK_ZOMBIE,66));
 			
@@ -1150,7 +1150,7 @@ public class SurvivorScript: MonoBehaviour {
 				Desires_W.Add(new Desire(COLLECT,56));
 			/*else
 				Desires_W.Add(new Desire(COLLECT,51));*/
-
+			
 		}
 		if(Desires.Contains(HELP_GO_BASE))
 		{
@@ -1182,7 +1182,7 @@ public class SurvivorScript: MonoBehaviour {
 			if(random == 3 || random == 4 || random == 1 || random == 2){
 				Desires_W.Add(new Desire(EXPLORE,2));
 			}
-
+			
 			if(random == 5){
 				Desires_W.Add(new Desire(EXPLORE_SOLO,2));
 			}
@@ -1192,7 +1192,7 @@ public class SurvivorScript: MonoBehaviour {
 				Desires_W.Add(new Desire(ATTACK_ZOMBIE_AS_GROUP,100));
 			}
 		}
-
+		
 		else
 			Desires_W.Add(new Desire(IDLE,1));
 		
@@ -1227,7 +1227,7 @@ public class SurvivorScript: MonoBehaviour {
 				intention_position = NearestResourcePosition();
 			/*if(resources_location != null){
 				intention_position = getNearestResourceMap();
-			}*/
+			} */
 			
 			/*intention = COLLECT;
 
@@ -1240,7 +1240,7 @@ public class SurvivorScript: MonoBehaviour {
 					intention = EXPLORE_SOLO;
 					intention_position = Vector3.zero;
 				}
-			}*/
+			} */
 		}
 		if (intention == HELP_GO_BASE) {
 			intention_position = getPositionInBase();
@@ -1258,7 +1258,7 @@ public class SurvivorScript: MonoBehaviour {
 			intention_position = getPositionInBase();
 		}
 	}
-
+	
 	
 	void Planner(){
 		Plan.Clear ();
@@ -1294,7 +1294,7 @@ public class SurvivorScript: MonoBehaviour {
 		if (intention == EXPLORE_SOLO) {
 			Plan.Add(RANDOM_MOVE_TO_PLAN);
 		}
-	//TODO
+		//TODO
 		if (intention == GO_BASE) {
 			Plan.Add(MOVE_TO_PLAN);
 		}
@@ -1312,7 +1312,7 @@ public class SurvivorScript: MonoBehaviour {
 	void Execute( string step , Vector3 position){
 		if (step == HEAL_PLAN) {
 			Heal();
-		} else if (step == MOVE_TO_PLAN) {
+		}  else if (step == MOVE_TO_PLAN) {
 			if(intention == FOLLOW_SURVIVOR){
 				//Debug.Log("tou a mover para survivor");
 				MoveTo(getSurvivorWithoutCritical().transform.position);
@@ -1320,22 +1320,22 @@ public class SurvivorScript: MonoBehaviour {
 			else
 				MoveTo(position);
 			
-		} else if (step == ATTACK_PLAN) {
+		}  else if (step == ATTACK_PLAN) {
 			attackZombie(NearestZombie());
-
-		} else if (step == COLLECT_PLAN) { 
+			
+		}  else if (step == COLLECT_PLAN) { 
 			CollectResources(NearestResource());
-
-		} else if (step == DEPOSIT_PLAN) {
+			
+		}  else if (step == DEPOSIT_PLAN) {
 			DepositResources();
-
-		} else  if (step == RANDOM_MOVE_TO_PLAN) {
+			
+		}  else  if (step == RANDOM_MOVE_TO_PLAN) {
 			randomMove();
-
-		} else if (step == ATTACK_PLAN_GROUP){
+			
+		}  else if (step == ATTACK_PLAN_GROUP){
 			superAttack();
 			_oneSuperStepExecuted = false;
-
+			
 		}else if (step == EXPLORE_PLAN_GROUP){
 			superExplore();
 			_oneSuperStepExecuted = false;
@@ -1388,13 +1388,13 @@ public class SurvivorScript: MonoBehaviour {
 		}
 		return false;
 	}
-
-
-
+	
+	
+	
 	private bool impossible(){
 		/*if (intention == HEAL && LevelHealth() == FULL_LEVEL) {
 			return true;
-		}*/
+		} */
 		if (intention == DEFEND_BASE && !ZombiesAround()) {
 			return true;
 		}
@@ -1408,7 +1408,7 @@ public class SurvivorScript: MonoBehaviour {
 		if (intention == ATTACK_ZOMBIE && !ZombiesAround()) {
 			return true;
 		}
-
+		
 		if (intention == ATTACK_ZOMBIE_AS_GROUP && 
 		    (!ZombiesAround() || !IsInParty() || _survivorsInTeam.Count <= _minTeamMembers) ){
 			return true;
@@ -1418,7 +1418,7 @@ public class SurvivorScript: MonoBehaviour {
 			return true;
 			//TODO: was finishing this!
 		}
-
+		
 		/*
 		if (intention == DEPOSIT && LevelResources() == EMPTY_LEVEL) {
 			return true;
@@ -1426,7 +1426,7 @@ public class SurvivorScript: MonoBehaviour {
 		}
 		if (intention == COLLECT && (LevelResources() == FULL_LEVEL || !ResourcesAround())) {
 			return true;
-		}*/
+		} */
 		if (intention == HELP_GO_BASE && !isHereSurvivorCritical()) {
 			//Debug.Log ("tou na base sucedded");
 			return true;
@@ -1458,26 +1458,26 @@ public class SurvivorScript: MonoBehaviour {
 			Debug.Log("Finished move to plan instruction");
 			return true;
 			
-		} 
+		}  
 		if (Plan[0] == ATTACK_PLAN && !ZombiesAround()) {
 			return true;
 			
-		} 
+		}  
 		if (Plan[0] == COLLECT_PLAN && (!ResourcesAround() || LevelResources() == FULL_LEVEL)) { 
 			//TODO: delete this, debug
 			Debug.Log("Finished collect instruction");
 			return true;
-		} 
+		}  
 		if (Plan[0] == DEPOSIT_PLAN && LevelResources() == EMPTY_LEVEL ) {
 			//TODO: delete this, debug
 			Debug.Log("Finished deposit instruction");
 			return true;
 			
-		} 
+		}  
 		if (Plan[0] == RANDOM_MOVE_TO_PLAN) {
 			return true;
 		}
-
+		
 		if (Plan[0] == ATTACK_PLAN_GROUP && _oneSuperStepExecuted) {
 			return true;
 		}
@@ -1493,13 +1493,13 @@ public class SurvivorScript: MonoBehaviour {
 		/*
 		if (intention == DEFEND_BASE && !ZombiesArounc()) {
 			return true;
-		}*/
+		} */
 		if (intention == FOLLOW_SURVIVOR && IsInBase() ) {
 			return true;
 		}
 		/*if (intention == HELP_ATTACK && !ZombiesAround() && !isAnySurvivorAttacking()) {
 			return true;
-		}*/
+		} */
 		if (intention == ATTACK_ZOMBIE && LevelHealth() == CRITICAL_LEVEL) {
 			return true;
 		}
@@ -1535,7 +1535,7 @@ public class SurvivorScript: MonoBehaviour {
 		return false;
 		
 	}
-
+	
 	/// ////////
 	/// Coliders
 	/// ////////
@@ -1545,7 +1545,7 @@ public class SurvivorScript: MonoBehaviour {
 		
 		if (other.tag.Equals("Survivor") && !other.transform.root.Equals(transform.root)){
 			_survivorsInSight.Add(other.gameObject);
-
+			
 			//TODO: debug, this is hardcoded way to create a team
 			if(!_survivorsInTeam.Contains(other.gameObject)){
 				_survivorsInTeam.Add(other.gameObject);
@@ -1689,15 +1689,15 @@ public class SurvivorScript: MonoBehaviour {
 				
 				if(renderer.isVisible){
 					GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
-					        name + ": \n" +
+					        name + ": \ n" +
 					        "State: " + _state +
-					        " \n" +
+					        " \ n" +
 					        "Resources: " + _resourceLevel +
-					        " \n" +
+					        " \ n" +
 					        "Intention: " + intention + 
-					        " \n" +
+					        " \ n" +
 					        "Step: " + Plan[0] + 
-					        " \n");
+					        " \ n");
 				}
 			}
 			
@@ -1731,7 +1731,7 @@ public class SurvivorScript: MonoBehaviour {
 				out_of_while = false;
 			}
 			else{
-
+				
 				if(Plan.Count() != 0 && !succeced() && !impossible())
 				{
 					if(checkStepCompleted()){
@@ -1752,10 +1752,10 @@ public class SurvivorScript: MonoBehaviour {
 				}
 				
 			}
-
+			
 			//DO NOT DELETE This forces collision updates in every frame
 			transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-
+			
 			/**/
 		}else{
 			renderer.material = transparentMaterial;
