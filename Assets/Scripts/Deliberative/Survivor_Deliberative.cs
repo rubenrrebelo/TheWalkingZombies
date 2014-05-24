@@ -15,7 +15,7 @@ public class Survivor_Deliberative : MonoBehaviour {
     public float _resourceLevel;
     public Transform _TopLeftBase;
     public Transform _BottomRightBase;
-
+	
     private const float PICKUP_RANGE = 2.0f;
     private const float FULL_HEALTH = 100.0f;
     private const float MAX_RESOURCES = 100.0f;
@@ -94,7 +94,6 @@ public class Survivor_Deliberative : MonoBehaviour {
     private const string FOLLOW_SURVIVOR = "follow_suvivor";
     private const string HELP_SURVIVOR_LOW_HEALTH = "help_survivor_low_health";
     private const string HELP_GO_BASE = "help_go_base";
-    private const string EXPLORE = "explore";
     private const string EXPLORE_SOLO = "explore_solo";
     private const string PATROL = "patrol";
     private const string GO_BASE = "go_base";
@@ -117,6 +116,7 @@ public class Survivor_Deliberative : MonoBehaviour {
     private const string EXPLORE_PLAN_GROUP = "superExplore";
     //TODO: finish join party intencion
     private const string JOIN_PARTY_PLAN = "joinParty";
+	private const string DISBAND_PARTY = "disbandParty";
 
     private bool share_end = false;
 
@@ -130,12 +130,14 @@ public class Survivor_Deliberative : MonoBehaviour {
     private bool transmitedMap; //transmit map one time when in base
 
     private int _exploredPoints = 20;
+	private Vector3 _nextPoint2Explore;
+	private bool _reachedNextPoint2Explore = true;
 
     private GameObject mapObj;
 
     private GameObject BaseLider;
 
-    private float infoBoxWidth = 100.0f;
+    private float infoBoxWidth = 150.0f;
     private float infoBoxHeight = 90.0f;
     private Vector3 currentScreenPos;
 
@@ -153,7 +155,7 @@ public class Survivor_Deliberative : MonoBehaviour {
 
     void Start()
     {
-        
+		_survivorsInTeam = new List<GameObject>();
         mapObj = GameObject.Find("Map");
 
         //TODO: debug value, was full
@@ -190,7 +192,6 @@ public class Survivor_Deliberative : MonoBehaviour {
         //StartCoroutine("CicloBDI");
 
         _dead = false;
-
 
         navMeshComp = GetComponent<NavMeshAgent>();
 
@@ -427,10 +428,7 @@ public class Survivor_Deliberative : MonoBehaviour {
     //Survivors-Around?
     private bool SurvivorsAround()
     {
-        if (_survivorsInSight.Count > 0)
-            return true;
-        else
-            return false;
+        return _survivorsInSight.Count > 0 ? true : false;
     }
     //Zombies-Around?
     private bool ZombiesAround()
@@ -1098,9 +1096,13 @@ public class Survivor_Deliberative : MonoBehaviour {
 	}
 
 	private void joinParty(){
-        Debug.Log("JOIN");
 		BaseLider.GetComponent<BaseLeaderScript>().QueueFutureTeamMember(gameObject);
+	}
 
+	private void disbandParty(){
+		//code
+		Debug.Log("Disbanded!");
+		_isInParty = false;
 	}
 
 
@@ -1108,33 +1110,48 @@ public class Survivor_Deliberative : MonoBehaviour {
 	private void superExplore(){
 		//TODO:Finishing this
 		_oneSuperStepExecuted = false;
-        Vector3 nextPoint2Explore = unexploredPosition();
 
 
+		//if(name.Equals("SurvivorLeader")){ Debug.Log("Hi, I'm doing explore!"); }
         if (_isPartyLeader)
         {
-            if (Vector3.Distance(nextPoint2Explore, transform.position) < 4){
-                if (_exploredPoints > 0)
+
+
+			if(!_reachedNextPoint2Explore){
+				_nextPoint2Explore = unexploredPosition();
+			}
+
+			Debug.Log("Leader at: " + transform.position + "on his way to: " + _nextPoint2Explore);
+
+			//if(name.Equals("SurvivorLeader")){ Debug.Log("And im a leader!"); }
+            if (Vector3.Distance(_nextPoint2Explore, transform.position) < 4){
+				//if(name.Equals("SurvivorLeader")){ Debug.Log("and im near an objective! :)"); }
+				if (_exploredPoints > 0)
                 {
                     _exploredPoints--;
+					_reachedNextPoint2Explore = true;
                 }
                 else
                 {
                     MoveTo(getPositionInBase());
+					if(name.Equals("SurvivorLeader")){ Debug.Log("And it's time to go home!"); }
                 }
             }else
             {
-                MoveTo(nextPoint2Explore);
+				if(name.Equals("SurvivorLeader")){ Debug.Log("and im not near a resource! :("); }
+				MoveTo(_nextPoint2Explore);
             }
         }
         else
         {
-            MoveTo(_partyLeader.transform.position);
+			Debug.Log("moving to "+_partyLeader.transform.position);
+			//MoveTo(_partyLeader.transform.position);
+			navMeshComp.SetDestination(_partyLeader.transform.position);
+
         }
 
-		
 		_oneSuperStepExecuted = true;
-		Plan.Add ("superExplore");
+		Plan.Add (EXPLORE_PLAN_GROUP);
     }
 	
 	
@@ -1297,7 +1314,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         //fixo
 
         //TODO fazer mais tarde
-        if (resources_location.Count() == 0)
+        if (resources_location.Count() == 0 && !IsInParty())
             Desires.Add(GO_BASE);
         //fixo
 
@@ -1311,14 +1328,14 @@ public class Survivor_Deliberative : MonoBehaviour {
 
 
         //TODO
-        if ((!ResourcesAround() && LevelResources() != FULL_LEVEL) || (resources_location.Count == 0 && LevelResources() != FULL_LEVEL))
+        if ((!IsInParty() && !ResourcesAround() && LevelResources() != FULL_LEVEL) || (resources_location.Count == 0 && LevelResources() != FULL_LEVEL && !IsInParty()))
             Desires.Add(EXPLORE_SOLO);
 
-        if(_isInParty && ZombiesAround() && _survivorsInTeam.Count >= _minTeamMembers){
+        if(_isInParty && ZombiesAround()){
 			Desires.Add (ATTACK_ZOMBIE_AS_GROUP);
 		}
 
-		if(_isInParty && !ZombiesAround() && _survivorsInTeam.Count >= _minTeamMembers){
+		if(_isInParty && !ZombiesAround()){
             Desires.Add(EXPLORE_AS_GROUP);
 		}
 
@@ -1331,7 +1348,9 @@ public class Survivor_Deliberative : MonoBehaviour {
     {
         intention_position = Vector3.zero;
 
-        Desires_W.Clear();
+		if(Desires_W.Count != 0){
+        	Desires_W.Clear();
+		}
 
         if (Desires.Contains(HEAL))
         {
@@ -1387,25 +1406,16 @@ public class Survivor_Deliberative : MonoBehaviour {
                 Desires_W.Add(new Desire(COLLECT, 56));
             else
                 Desires_W.Add(new Desire(COLLECT, 51));
-
-
-
-
-
-
         }
         if (Desires.Contains(HELP_GO_BASE))
         {
             //Debug.Log("vou ajudar a ir para a base");
             Desires_W.Add(new Desire(HELP_GO_BASE, 58));
-
-
         }
 
         if (Desires.Contains(EXPLORE_AS_GROUP))
 		{
-			//TODO: decide weight
-            Desires_W.Add(new Desire(EXPLORE_AS_GROUP, 2));
+            Desires_W.Add(new Desire(EXPLORE_AS_GROUP, 49));
 		}
 		if (Desires.Contains (ATTACK_ZOMBIE_AS_GROUP)) {
 			if(_isInParty && ZombiesAround () && _survivorsInTeam.Count >= _minTeamMembers){
@@ -1416,9 +1426,9 @@ public class Survivor_Deliberative : MonoBehaviour {
 
 			if((Random.Range(0,2)) == 1){
 			//TODO: decide what the weight is. if true, o peso e maior que o solo, se false, tem que ser um weight mais pequeno que solo
-				Desires_W.Add(new Desire(JOIN_PARTY_PLAN,100));
+				Desires_W.Add(new Desire(JOIN_PARTY,100));
 			}else{
-				Desires_W.Add(new Desire(JOIN_PARTY_PLAN,100));
+				Desires_W.Add(new Desire(JOIN_PARTY,100));
 			}
 		}
 
@@ -1427,6 +1437,7 @@ public class Survivor_Deliberative : MonoBehaviour {
             Desires_W.Add(new Desire(EXPLORE_SOLO, 48));
 
         }
+
         if (Desires.Contains(GO_BASE))
         {
             int random = Random.Range(0, 2);
@@ -1434,8 +1445,8 @@ public class Survivor_Deliberative : MonoBehaviour {
                 Desires_W.Add(new Desire(GO_BASE, 50));
             if (random == 1)
                 Desires_W.Add(new Desire(GO_BASE, 47));
-
         }
+
         /*if((Desires.Contains(PATROL) || Desires.Contains(EXPLORE)))
         {
             int random = Random.Range(1,5);
@@ -1446,6 +1457,7 @@ public class Survivor_Deliberative : MonoBehaviour {
                 Desires_W.Add(new Desire(EXPLORE_SOLO,2));
             }
         }*/
+
         else
             Desires_W.Add(new Desire(IDLE, 1));
 
@@ -1508,9 +1520,6 @@ public class Survivor_Deliberative : MonoBehaviour {
                 }
             }*/
 
-
-
-
         }
         if (intention == HELP_GO_BASE)
         {
@@ -1528,6 +1537,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         if (intention == EXPLORE_AS_GROUP)
         {
             _exploredPoints = 20;
+			_reachedNextPoint2Explore = true;
         }
 
 
@@ -1586,14 +1596,16 @@ public class Survivor_Deliberative : MonoBehaviour {
             Plan.Add(MOVE_TO_PLAN);
             //Debug.Log("adicionei share plan");
             Plan.Add(SHARE_PLAN);
+			Plan.Add(DISBAND_PARTY);
         }
         if (intention == PATROL)
         {
             Plan.Add(MOVE_TO_PLAN);
         }
-        if (intention == EXPLORE)
+		if (intention == EXPLORE_AS_GROUP)
         {
-            Plan.Add(MOVE_TO_PLAN);
+			//if(name.Equals("SurvivorLeader")){ Debug.Log("Im planning to go explore as group!"); }
+            Plan.Add(EXPLORE_PLAN_GROUP);
         }
 
         if (intention == ATTACK_ZOMBIE_AS_GROUP) {
@@ -1608,7 +1620,9 @@ public class Survivor_Deliberative : MonoBehaviour {
 
     void Execute(string step, Vector3 position)
     {
-        if (step == HEAL_PLAN)
+        
+		//if(name.Equals("SurvivorLeader")){ Debug.Log("Executing step explore as team?: " + step.Equals (EXPLORE_PLAN_GROUP)); }
+		if (step == HEAL_PLAN)
         {
             Heal();
         }
@@ -1616,12 +1630,10 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
             if (intention == FOLLOW_SURVIVOR)
             {
-                //Debug.Log("tou a mover para survivor");
                 MoveTo(getSurvivorWithoutCritical().transform.position);
             }
             else
             {
-                //Debug.Log("tou tentar mover");
                 MoveTo(position);
 
             }
@@ -1637,7 +1649,6 @@ public class Survivor_Deliberative : MonoBehaviour {
         }
         else if (step == SHARE_PLAN)
         {
-            //Debug.Log("tou a ir fazer SHHHHHHHHHHHHHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAREEEEEEEEEE");
             share();
         }
         else if (step == DEPOSIT_PLAN)
@@ -1658,7 +1669,9 @@ public class Survivor_Deliberative : MonoBehaviour {
 		else if (step == JOIN_PARTY_PLAN){
 			joinParty();
 		}
-
+		else if (step == DISBAND_PARTY){
+			disbandParty();
+		}
     }
 
 
@@ -1713,9 +1726,12 @@ public class Survivor_Deliberative : MonoBehaviour {
             return true;
 
         }
-        if (intention == EXPLORE_AS_GROUP && IsInBase() && _exploredPoints == 0)
+		if(name.Equals("SurvivorLeader") && 
+		   ((_exploredPoints <= 0 && intention == EXPLORE_AS_GROUP && IsInBase())? true:false)){ 
+			Debug.Log("succeeded! ");
+		}
+        if (intention == EXPLORE_AS_GROUP && IsInBase() && _exploredPoints <= 0)
         {
-            //@
             _isInParty = false;
             return true;
         }
@@ -1761,8 +1777,13 @@ public class Survivor_Deliberative : MonoBehaviour {
 		    (!ZombiesAround() || !IsInParty() || _survivorsInTeam.Count <= _minTeamMembers) ){
 			return true;
 		}
-		if (intention == EXPLORE && 
-		    (!IsInParty() || _survivorsInTeam.Count <= _minTeamMembers) ){
+
+		if (intention == EXPLORE_AS_GROUP && 
+		    (!IsInParty() || _survivorsInTeam.Count+1 < _minTeamMembers) )
+		{
+			if(name.Equals("SurvivorLeader")){ 
+				Debug.Log("It was impossible to continue with explore group :(");
+			}
 			return true;
 		}
         /*
@@ -1779,22 +1800,14 @@ public class Survivor_Deliberative : MonoBehaviour {
             //Debug.Log ("tou na base sucedded");
             return true;
         }
-        /*
-        if (intention == EXPLORE_SOLO) {
-			
-        }
         if (intention == GO_BASE && IsInBase()) {
             return true; 
         }
-       
-        if (intention == IDLE) {
-            return true;
-        }
-        */
 
         return false;
 
     }
+
     private bool checkStepCompleted()
     {
         if (Plan[0] == HEAL_PLAN && LevelHealth() == FULL_LEVEL)
@@ -1803,8 +1816,6 @@ public class Survivor_Deliberative : MonoBehaviour {
         }
         if (Plan[0] == MOVE_TO_PLAN && (intention_position - transform.position).magnitude < 4.0f)
         {
-            //TODO: delete this, debug
-            //Debug.Log("Finished move to plan instruction");
             return true;
 
         }
@@ -1815,14 +1826,11 @@ public class Survivor_Deliberative : MonoBehaviour {
         }
         if (Plan[0] == COLLECT_PLAN && (!ResourcesAround() || LevelResources() == FULL_LEVEL))
         {
-            //TODO: delete this, debug
-            Debug.Log("Finished collect instruction");
             return true;
+
         }
         if (Plan[0] == DEPOSIT_PLAN && LevelResources() == EMPTY_LEVEL)
         {
-            //TODO: delete this, debug
-            Debug.Log("Finished deposit instruction");
             return true;
 
         }
@@ -1830,13 +1838,10 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
             return true;
         }
-
         if (Plan[0] == SHARE_PLAN)
         {
             return false;
-        }
-
-
+		}
         if (Plan[0] == ATTACK_PLAN_GROUP && _oneSuperStepExecuted) {
 			return true;
 		}
@@ -1897,10 +1902,11 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
             return true;
         }
-        /*
-        if (intention == EXPLORE && IsInBase()) {
+        
+		if (intention == EXPLORE_AS_GROUP && (ResourcesAround() || ZombiesAround())) {
             return true;
         }
+		/*
         if (intention == IDLE) {
             return true;
         }
@@ -2133,8 +2139,7 @@ public class Survivor_Deliberative : MonoBehaviour {
 			}
 		}
 	}
-	
-	
+
 	public void BecomePartyLeader(List<GameObject> team){
 		_isPartyLeader = true;
 		_isInParty = true;
@@ -2157,8 +2162,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         //Debug.Log("Destroyed: "+ this.name);
         Destroy(this.gameObject);
     }
-
-
+	
     private void checkImpossiblePathAndReset()
     {//Calculates a new setDestination in case the previous calc isnt reached in a set reset time
         timeWindow -= Time.deltaTime;
@@ -2186,15 +2190,19 @@ public class Survivor_Deliberative : MonoBehaviour {
             currentScreenPos = Camera.main.WorldToScreenPoint(this.transform.position);
             if (showInfo)
             {
-                //Survivors's Information Box
 
+				if(_partyLeader != null){
+					sphere.transform.position = _partyLeader.transform.position;
+				}
+
+                //Survivors's Information Box
                 if (this.renderer.isVisible)
                 {
                     GUI.Box(new Rect(currentScreenPos.x, Screen.height - currentScreenPos.y, infoBoxWidth, infoBoxHeight),
                             this.name + ": \n" +
                             "IsInParty: " + _isInParty +
                             " \n" +
-                            "Resources: " + _resourceLevel +
+					        "Leader: " + ((_partyLeader != null) ? _partyLeader.name : " ") +
                             " \n" +
                             "Intention: " + intention +
                             " \n" +
@@ -2294,13 +2302,6 @@ public class Survivor_Deliberative : MonoBehaviour {
                 }
 
             }
-
-
-
-
-
-
-
 
 
             //avoid navmesh pathfinding issues

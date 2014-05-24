@@ -26,7 +26,7 @@ public class BaseLeaderScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
     //private List<GameObject> _barriersInSight;
 
-    private const int MIN_TEAM_MEMBERS = 5;
+    private const int MIN_TEAM_MEMBERS = 3;
 	private List<GameObject> _queuedFutureTeamMembers;
 	private GameObject _nextFutureTeamLeader;
 	private int _numberFutureTeamMembers;
@@ -239,7 +239,8 @@ public class BaseLeaderScript: MonoBehaviour {
 	}
 
     public void QueueFutureTeamMember(GameObject survivor){
-        Debug.Log("AQUI");
+
+
 		if(!_queuedFutureTeamMembers.Contains(survivor)){
 			_queuedFutureTeamMembers.Add(survivor);
 		}
@@ -255,8 +256,7 @@ public class BaseLeaderScript: MonoBehaviour {
 
     private bool allInBase()
     {
-        
-        for (int i = 1; i < (MIN_TEAM_MEMBERS + 1); i++)
+        for (int i = 1; i < MIN_TEAM_MEMBERS; i++)
         {
             if (!_queuedFutureTeamMembers[i].GetComponent<Survivor_Deliberative>().IsInBase())
                 return false;
@@ -266,24 +266,30 @@ public class BaseLeaderScript: MonoBehaviour {
 
 	private void processTeams(){
 
-        if (_queuedFutureTeamMembers.Count > (MIN_TEAM_MEMBERS + 1))
+        if (_queuedFutureTeamMembers.Count >= MIN_TEAM_MEMBERS)
         {
-            Debug.Log("PARTY?!?!");
             List<GameObject> team = new List<GameObject>();
 
 			//pick one of the survivors randomly to become the first team member
 			_nextFutureTeamLeader = _queuedFutureTeamMembers[0];
 			_queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
 
-            for (int i = 1; i < (MIN_TEAM_MEMBERS + 1); i++)
+
+			List<GameObject> aux = new List<GameObject>();
+            
+			for (int i = 0; i < MIN_TEAM_MEMBERS-1; i++)
             {
-                team.Add(_queuedFutureTeamMembers[i]);
-                _queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
+				team.Add(_queuedFutureTeamMembers[i]);
+				aux.Add(_queuedFutureTeamMembers[i]);
             }
+			foreach( GameObject o in aux){
+				_queuedFutureTeamMembers.Remove(o);
+			}
 
             _nextFutureTeamLeader.GetComponent<Survivor_Deliberative>().BecomePartyLeader(team);
+			Debug.Log( _nextFutureTeamLeader.name + " is leading an Expedition!! Good luck! Gambate kudasaaaai, teme!");
 
-            for (int i = 1; i < MIN_TEAM_MEMBERS; i++)
+            for (int i = 0; i < MIN_TEAM_MEMBERS - 1; i++)
             {
                 team[i].GetComponent<Survivor_Deliberative>().BecomePartyMember(_nextFutureTeamLeader, team);
             }
@@ -327,6 +333,8 @@ public class BaseLeaderScript: MonoBehaviour {
 	void Update () {
 
         processTeams();
+
+		//Debug.Log(_queuedFutureTeamMembers.Count);
 
 		ResourceDecay ();
 
@@ -407,7 +415,8 @@ public class BaseLeaderScript: MonoBehaviour {
         else
             resourceLevel = 0;
 
-        //mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
+		//TODO: this might kaput..
+        mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
 
         if (_explorerMap[x][y] != 0)
         {
