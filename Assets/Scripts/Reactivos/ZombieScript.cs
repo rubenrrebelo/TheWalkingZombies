@@ -95,7 +95,10 @@ public class ZombieScript: MonoBehaviour {
 	}
 	IEnumerator attackClosestSurvivor(GameObject nearestSurvivor){
 		_isReloading = true;
-		nearestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+        if (nearestSurvivor.GetComponent<SurvivorScript>() !=null)
+		    nearestSurvivor.GetComponent<SurvivorScript>().loseHealth(_attDamage);
+        if (nearestSurvivor.GetComponent<Survivor_Deliberative>() != null)
+            nearestSurvivor.GetComponent<Survivor_Deliberative>().loseHealth(_attDamage);
 		yield return new WaitForSeconds(1.5F);
 		_isReloading = false;
 	}

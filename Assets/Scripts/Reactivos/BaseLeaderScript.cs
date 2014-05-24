@@ -239,6 +239,7 @@ public class BaseLeaderScript: MonoBehaviour {
 	}
 
     public void QueueFutureTeamMember(GameObject survivor){
+        Debug.Log("AQUI");
 		if(!_queuedFutureTeamMembers.Contains(survivor)){
 			_queuedFutureTeamMembers.Add(survivor);
 		}
@@ -252,9 +253,22 @@ public class BaseLeaderScript: MonoBehaviour {
         }
     }
 
+    private bool allInBase()
+    {
+        
+        for (int i = 1; i < (MIN_TEAM_MEMBERS + 1); i++)
+        {
+            if (!_queuedFutureTeamMembers[i].GetComponent<Survivor_Deliberative>().IsInBase())
+                return false;
+        }
+        return true;
+    }
+
 	private void processTeams(){
+
         if (_queuedFutureTeamMembers.Count > (MIN_TEAM_MEMBERS + 1))
         {
+            Debug.Log("PARTY?!?!");
             List<GameObject> team = new List<GameObject>();
 
 			//pick one of the survivors randomly to become the first team member
@@ -267,11 +281,11 @@ public class BaseLeaderScript: MonoBehaviour {
                 _queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
             }
 
-            _nextFutureTeamLeader.GetComponent<SurvivorScript>().BecomePartyLeader(team);
+            _nextFutureTeamLeader.GetComponent<Survivor_Deliberative>().BecomePartyLeader(team);
 
             for (int i = 1; i < MIN_TEAM_MEMBERS; i++)
             {
-                team[i].GetComponent<SurvivorScript>().BecomePartyMember(_nextFutureTeamLeader, team);
+                team[i].GetComponent<Survivor_Deliberative>().BecomePartyMember(_nextFutureTeamLeader, team);
             }
 		}
 	}

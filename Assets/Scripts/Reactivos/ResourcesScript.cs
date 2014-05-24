@@ -41,6 +41,28 @@ public class ResourcesScript : MonoBehaviour {
 			return 25.0f;
 	}
 
+    public bool catchResources(out float val)
+    {
+        //to make it "disappear"
+        _resourcesLevel -= 25.0f;
+
+        if (_resourcesLevel <= 0)
+        {
+            float ammountTaken = 25.0f + _resourcesLevel;
+            _dead = true;
+            foreach (Transform child in transform)
+            {
+                Destroy(child.gameObject);
+            }
+            StartCoroutine("destroyAfterDeath");
+            val = ammountTaken;
+            return true;
+        }
+        else
+            val = 25.0f;
+        return false;
+    }
+
 	private IEnumerator destroyAfterDeath(){
 		yield return new WaitForSeconds(3.0F);
 		Destroy(this.gameObject);

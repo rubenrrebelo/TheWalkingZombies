@@ -34,7 +34,10 @@ public class InputManager : MonoBehaviour {
 						selectedObj.GetComponent<ZombieScript>().setDisplayInfo(false);
 					}
 					if(selectedObj.tag.Equals("Survivor")){
-						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(false);
+                        if (selectedObj.GetComponent<SurvivorScript>() != null)
+						    selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(false);
+                        if (selectedObj.GetComponent<Survivor_Deliberative>() != null)
+                            selectedObj.GetComponent<Survivor_Deliberative>().setDisplayInfo(false);
 					}
 					if(selectedObj.tag.Equals("BaseLeader")){
 						selectedObj.GetComponent<BaseLeaderScript>().setDisplayInfo(false);
@@ -46,7 +49,10 @@ public class InputManager : MonoBehaviour {
 						selectedObj.GetComponent<ZombieScript>().setDisplayInfo(true);
 					}
 					if(selectedObj.tag.Equals("Survivor")){
-						selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(true);
+                        if (selectedObj.GetComponent<SurvivorScript>() != null)
+                            selectedObj.GetComponent<SurvivorScript>().setDisplayInfo(true);
+                        if (selectedObj.GetComponent<Survivor_Deliberative>() != null)
+                            selectedObj.GetComponent<Survivor_Deliberative>().setDisplayInfo(true);
 					}
 					if(selectedObj.tag.Equals("BaseLeader")){
 						selectedObj.GetComponent<BaseLeaderScript>().setDisplayInfo(true);
