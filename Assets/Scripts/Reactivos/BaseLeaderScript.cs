@@ -26,11 +26,10 @@ public class BaseLeaderScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
     //private List<GameObject> _barriersInSight;
 
-    private const int MIN_TEAM_MEMBERS = 3;
+    private const int MIN_TEAM_MEMBERS = 6;
 	private List<GameObject> _queuedFutureTeamMembers;
 	private GameObject _nextFutureTeamLeader;
 	private int _numberFutureTeamMembers;
-
 
     private GameObject _barrier1;
     private GameObject _barrier2;
@@ -287,7 +286,6 @@ public class BaseLeaderScript: MonoBehaviour {
 			}
 
             _nextFutureTeamLeader.GetComponent<Survivor_Deliberative>().BecomePartyLeader(team);
-			Debug.Log( _nextFutureTeamLeader.name + " is leading an Expedition!! Good luck! Gambate kudasaaaai, teme!");
 
             for (int i = 0; i < MIN_TEAM_MEMBERS - 1; i++)
             {

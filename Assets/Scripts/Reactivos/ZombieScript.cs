@@ -148,7 +148,6 @@ public class ZombieScript: MonoBehaviour {
 		}
 		
 		if ((CurrentDestination - transform.position).magnitude < 2.0f) {
-			
 			CurrentDestination = new Vector3 (transform.position.x + Random.Range (- 40.0f, 40.0f)
 			                                  ,transform.position.y,
 			                                  transform.position.z + Random.Range (- 40.0f, 40.0f));
@@ -317,6 +316,7 @@ public class ZombieScript: MonoBehaviour {
 			{
 				attackSurvivor(NearestSurvivor());
 			}
+
 			else
 				randomMove();
 
