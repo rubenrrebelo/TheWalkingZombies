@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
-public class Survivor_Leader: MonoBehaviour {
+public class SurvivorScript: MonoBehaviour {
 	
 	public float _healthLevel;
 	public float _movSpeed;
@@ -15,10 +14,7 @@ public class Survivor_Leader: MonoBehaviour {
 	public Transform _BottomRightBase;
 	
 	private const float PICKUP_RANGE = 2.0f;
-
-	//TODO: changed to debug, was 100
-	private const float FULL_HEALTH = 300.0f;
-
+	private const float FULL_HEALTH = 100.0f;
 	private const float MAX_RESOURCES = 100.0f;
 	private const float CRITICAL_THRESHOLD = 40.0f;
 	private const string IDLE = "idle";
@@ -32,9 +28,7 @@ public class Survivor_Leader: MonoBehaviour {
 	private const int NORMAL_LEVEL = 2;
 	private const int FULL_LEVEL = 3;
 	private const float RELOAD_SPEED_COLLECT = 1.0f;
-
-	//TODO: was changed
-	private const float RELOAD_SPEED_ATTACK = 3.0f;
+	private const float RELOAD_SPEED_ATTACK = 1.5f;
 	
 	private List<GameObject> _zombiesInSight;
 	private List<GameObject> _survivorsInSight;
@@ -60,47 +54,21 @@ public class Survivor_Leader: MonoBehaviour {
 	private Vector3 CurrentDestination;
 	private float timeWindow;
 	private const float PATH_RESET_TIME = 5.0f;
-
+	
+	
 	private bool showInfo;
 	private float lifebar_x_offset, lifebar_y_offset;
 	private Texture2D life_bar_green, life_bar_red;
 	private float lifebar_lenght, lifebar_height;
 	private Material transparentMaterial;
-
-	private bool _isInParty;
-	private bool _isPartyLeader;
-	private GameObject _partyLeader = null;
-	public GameObject _tank = null;
-	public ParticleSystem shots;
-	public bool _isTank;
-
-    //TODO : LEADER STUFF
-    private List<GameObject> _recruits;
-    private List<GameObject> _possibleLeaders;
-    public int numberPartyMembers;
-	//END
-
+	
 	void Start () {
-
-		_healthLevel = FULL_HEALTH;
+		//TODO: debug value, was full
+		_healthLevel = 100.0f;
 		_movSpeed = 8.0f;
 		_visionRange = 20.0f;
 		_attDamage = 25.0f;
-
-		//TODO: was changed
-		_attRange = 15.0f;
-
-		if(this.gameObject.name.Equals("SurvivorLeader")) _isPartyLeader = true;
-		_isInParty = false;
-		//_partyLeader = GameObject.Find("SurvivorLeader");
-		_isTank = false;
-
-        //TODO : LEADER STUFF
-        _possibleLeaders = new List<GameObject>();
-        _recruits = new List<GameObject>();
-
-        //END
-
+		_attRange = 5.0f;
 		_resourceLevel = 0.0f;
 		
 		_zombiesInSight = new List<GameObject>();
@@ -131,7 +99,7 @@ public class Survivor_Leader: MonoBehaviour {
 		transparentMaterial = (Material)Resources.Load(@"Materials/Transparent",typeof(Material));
 		
 		lifebar_lenght = 30.0f;
-		lifebar_height = 2.0f;
+		lifebar_height = 4.0f;
 		lifebar_x_offset = -15.0f;
 		lifebar_y_offset = -8.0f;
 		
@@ -142,10 +110,19 @@ public class Survivor_Leader: MonoBehaviour {
 	
 	//Actuadores-------------------------------------------------------------------
 
+	private void attackZombie(GameObject nearestZombie){
+		_state = ATTACKING;
+		navMeshComp.SetDestination(nearestZombie.transform.position);
+
+		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
+		if(!_isReloading && _dist2Zombie <= _attRange){
+			StartCoroutine(attackClosestZombie(nearestZombie));
+		}
+	}
+
 	IEnumerator attackClosestZombie(GameObject nearestZombie){
 		_isReloading = true;
 		nearestZombie.GetComponent<ZombieScript>().loseHealth(_attDamage);
-		Instantiate (shots, this.transform.position, this.transform.rotation);
 		yield return new WaitForSeconds(RELOAD_SPEED_ATTACK);
 		_isReloading = false;
 	}
@@ -183,6 +160,7 @@ public class Survivor_Leader: MonoBehaviour {
 	}
 	// Heal
 	private void Heal(){
+		
 
 			_state = HEALING;
 			navMeshComp.SetDestination (healPosition);
@@ -198,10 +176,7 @@ public class Survivor_Leader: MonoBehaviour {
 		_state = MOVINGTO;
 		navMeshComp.SetDestination (position);
 	}
-
-
-
-
+	
 	//Random-Move
 	private void randomMove(){
 		/**/
@@ -398,14 +373,14 @@ public class Survivor_Leader: MonoBehaviour {
 	}
 	//Survivor-Action
 	private string SurvivorAction(GameObject survivor){
-		return survivor.GetComponent<Survivor_Leader> ().getState ();
+		return survivor.GetComponent<SurvivorScript> ().getState ();
 		
 	}
 	//Any-Survivor-Need-Help-Collecting
 	private Vector3 anySurvivorCollecting(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
-			if( survivor.GetComponent<Survivor_Leader>().getState().Equals(COLLECTING)){
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
 				}else{ //chooses the closest survivor to him that is collecting
@@ -424,7 +399,7 @@ public class Survivor_Leader: MonoBehaviour {
 	private Vector3 anySurvivorAttacking(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are attacking
-			if( survivor.GetComponent<Survivor_Leader>().getState().Equals(ATTACKING)){
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(ATTACKING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
 				}else{ //chooses the closest survivor to him that is attacking
@@ -442,7 +417,7 @@ public class Survivor_Leader: MonoBehaviour {
 	private bool isAnySurvivorAttacking(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are attacking
-			if( survivor.GetComponent<Survivor_Leader>().getState().Equals(ATTACKING)){
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(ATTACKING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
 				}else{ //chooses the closest survivor to him that is attacking
@@ -463,7 +438,7 @@ public class Survivor_Leader: MonoBehaviour {
 	private bool isAnySurvivorCollecting(){
 		GameObject survivorInNeed = null;
 		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
-			if( survivor.GetComponent<Survivor_Leader>().getState().Equals(COLLECTING)){
+			if( survivor.GetComponent<SurvivorScript>().getState().Equals(COLLECTING)){
 				if(survivorInNeed == null){
 					survivorInNeed = survivor;
 				}else{ //chooses the closest survivor to him that is collecting
@@ -479,24 +454,6 @@ public class Survivor_Leader: MonoBehaviour {
 			return false;
 		}else 
 			return true;
-	}
-
-	private Vector3 farthestKnownSurvivor(){
-		GameObject farthestSurvivor = null;
-		foreach(GameObject survivor in _survivorsInSight){ //check each survivor around to see if they are collecting
-
-			if(farthestSurvivor == null){
-				farthestSurvivor = survivor;
-			}else{ //chooses the closest survivor known to him
-				if (Vector3.Distance(farthestSurvivor.transform.position, this.transform.position) <
-				    Vector3.Distance(survivor.transform.position, this.transform.position))
-				{
-					farthestSurvivor = survivor;
-				}
-			}
-
-		}
-		return farthestSurvivor.transform.position;
 	}
 
 	/// ////////
@@ -601,7 +558,7 @@ public class Survivor_Leader: MonoBehaviour {
 			Debug.Log(this.name + " died.");
 			//to make it "disappear"
 			_dead = true;
-			//Instantiate(Resources.Load(@"Models/Characters/Zombie"), this.transform.position, this.transform.rotation);
+			Instantiate(Resources.Load(@"Models/Characters/Zombie"), this.transform.position, this.transform.rotation);
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
@@ -658,257 +615,73 @@ public class Survivor_Leader: MonoBehaviour {
 		}
 			}
 	}
-
-	//TODO: this was added
-	private void moveAwayFromZombie(){
-		Vector3 closestZombie = NearestZombiePosition ();
-		Vector3 destination = Vector3.Normalize (this.transform.position - closestZombie);
-		navMeshComp.SetDestination (this.transform.position + destination);
-	}
-
-
-
-	//TODO: this was added
-	private GameObject healthiestSurvivor(){
-		GameObject healthiestSurv = null;
-		float healthiestSurvHealth = 0.0f;
-
-		foreach (GameObject newSurvivor in _survivorsInSight) {
-			//If its full health, pick the first one and return
-			float newSurvivorHealth = newSurvivor.GetComponent<SurvivorScript>()._healthLevel;
-			if(newSurvivorHealth == FULL_HEALTH ){
-				return newSurvivor;
-			}
-
-			if(healthiestSurv != null){
-				if (newSurvivorHealth > healthiestSurvHealth){
-					healthiestSurv = newSurvivor;
-					healthiestSurvHealth = newSurvivorHealth;
-				}
-			}else{
-				healthiestSurv = newSurvivor;
-				healthiestSurvHealth = newSurvivorHealth;
-			}
-		}
-		return healthiestSurv;
-	}
-
-	//TODO: this was created
-	private float distanceToZombie(GameObject zombie){
-		return Vector3.Distance(zombie.transform.position, this.transform.position);
-	}
-
-	//TODO: this was changed
-	private void attackZombie(GameObject nearestZombie){
-		_state = ATTACKING;
-		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
-		
-		if (_dist2Zombie > _attRange) {
-			navMeshComp.SetDestination (nearestZombie.transform.position);
-		} else {
-			if (_isReloading) {
-				moveAwayFromZombie ();
-			} else {
-				StartCoroutine(attackClosestZombie(nearestZombie));
-			}
-		}
-	}
-	//TODO: this was added
-	private void attackZombieAsTank(GameObject nearestZombie){
-		_state = ATTACKING;
-		float _dist2Zombie = Vector3.Distance(nearestZombie.transform.position, this.transform.position);
-		//TODO: should be changed
-		if (_dist2Zombie > 5.0f) {
-			navMeshComp.SetDestination (nearestZombie.transform.position);
-		} else {
-			if (_isReloading) {
-				evadeManouvers ();
-			} else {
-				StartCoroutine(attackClosestZombie(nearestZombie));
-			}
-		}
-	}
-
-	//TODO: ths was added
-	//Ask lider to elect a new survivor for tank role
-	private void demandNewTank(){
-		_partyLeader.GetComponent<Survivor_Leader> ().reRollTank (this.gameObject);
-		_isTank = false;
-	}
-
-	//TODO: ths was added
-	//called by previous tank, this will force the choosing of a new one
-	public void reRollTank (GameObject previousTank){
-		if(_tank.Equals(previousTank)){
-			_tank = null;
-		}
-	}
-
-	private bool _movingEvade = false;
-
-	//TODO: this was added
-	private void evadeManouvers(){
-		if (!_movingEvade) {
-			Vector3 closestZombie = NearestZombiePosition ();
-			Vector3 destination = Vector3.Normalize (this.transform.position - closestZombie);
-			
-			if (Random.Range (0, 2) == 1) {
-
-				StartCoroutine(rotateAndMoveTo(90.0f, destination));
-				//Debug.Log("Going Right!");
-			}else{
-				StartCoroutine(rotateAndMoveTo(-90.0f, destination));
-				//Debug.Log("Going Left!");
-			}
-		}
-	}
-
-	//fini
-	IEnumerator rotateAndMoveTo(float angle, Vector3 dest){
-		_movingEvade = true;
-		Vector3 rotatedVector = Quaternion.AngleAxis(angle, Vector3.up) * dest;
-		navMeshComp.SetDestination ((this.transform.position + rotatedVector) * 10);
-
-		Vector3 debug = (this.transform.position + rotatedVector) * 10;
-		Debug.Log ("set destination: " + debug.x + debug.z);
-		yield return new WaitForSeconds(2.0f);
-		_movingEvade = false;
-	}
-
-	//TODO: this was added
-	private
-
+	
+	
 	void Update () {
 		if(!_dead){
+		/**/
+		// CICLO PRINCIPAL
 
-            if (_isPartyLeader && _recruits.Count <= numberPartyMembers)
-            {
-                RecruitingSurvivors();
-
-                //Debug.Log(gameObject.name + " Recruiting #" + _survivorsInSight.Count);
-            }
-
-            if (!_isPartyLeader && !_isInParty && _possibleLeaders.Count != 0)
-            {
-                AcceptLeader();
-
-                //Debug.Log(gameObject.name + " Accepts Leader: " + _possibleLeaders[0].name);
-            }
-
-            if (_isPartyLeader && _recruits.Count > 0 && _recruits.Count <= numberPartyMembers)
-            {
-                ConfirmRecruitSurvivors();
-
-                //Debug.Log(gameObject.name + " Accepts Recruits: " + _recruits.Count);
-            }
-
-            
-
-            /** /
-            if (_isPartyLeader)
-            {
-                if (Random.Range(0, 20) == 0)
-                {
-                    disbandWholeParty();
-                }
-            }
-            /**/
-
-            /** /
-            if (_isPartyLeader && _isInParty)
-            {
-                Debug.Log(gameObject.name + " Leader: " + _isPartyLeader + " Party" + _isInParty + " Recruits" + _recruits.Count);
-            }
-            else if(!_isPartyLeader && _isInParty)
-            {
-                Debug.Log(gameObject.name + " Recruit: " + !_isPartyLeader + " Party" + _isInParty + " PartyLeader" + _partyLeader.name);
-            }
-            /**/
-			//** /
-			//execute do plan(Intenção att grupo)
-			//TODO: this was added
-			/** /
-			if(_isPartyLeader){
-				if(_tank == null){
-					_tank = healthiestSurvivor();
-					_tank.GetComponent<Survivor_Leader>()._isTank = true;
-					Debug.Log( _tank.name + " is now tanking!");
-				}
-			}
-			/** /
-
-			if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
-			{
-				if(_tank){
-					attackZombieAsTank(NearestZombie());
+		if (LevelHealth () == CRITICAL_LEVEL && HealInRange() ) 
+		{
+			Heal ();
+		}
+		else if(ZombiesAround() && LevelHealth () != CRITICAL_LEVEL ) 
+		{
+			attackZombie(NearestZombie());
+		}
+		else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL ) 
+		{
+				if(LevelResources() != 0 && DepositInRange()){
+					/**/
+					//might choose to risk life to store resources
+					if(Random.Range(0,2) == 0){
+						DepositResources();
+						//Debug.Log("Heroic Act!! Never forget " + this.name);
+					}else{
+						randomMove();
+					}
+					/**/
 				}else{
-					attackZombie(NearestZombie());
-				}
-			}
-			else if(ZombiesAround() && LevelHealth () == CRITICAL_LEVEL && SurvivorsAround()) 
-			{
-				MoveTo(farthestKnownSurvivor());
-				if(_tank){
-					demandNewTank();
-				}
-			}
-			else if(ZombiesAround() && (distanceToZombie(NearestZombie()) > 15.0f)){
-				attackZombie(NearestZombie());
-			}
-
-			//fim do plano att em grupo
-			/** /
-
-
-			//reconsider
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			else if(!ZombiesAround() && LevelResources() != 0 && DepositInRange()) 
-			{
-				DepositResources();
-			}
-			else if (ResourcesAround() && LevelResources() != FULL_LEVEL )
-			{
-				CollectResources(NearestResource());
-			}
-			else if(SurvivorsAround()){
-				if(isAnySurvivorAttacking()){
-					MoveTo(anySurvivorAttacking());
-				}
-				else if (isAnySurvivorCollecting()){
-					MoveTo(anySurvivorCollecting());
-				}
-				/** /
-				//doesn't make it more efficient, map is less explored
-				else if(isAnySurvivorMoving()){
-					MoveTo(anySurvivorMoving);
-				}
-				/** /
-				else{
-
 					randomMove();
 				}
+		}
+		else if(!ZombiesAround() && LevelResources() != 0 && DepositInRange()) 
+		{
+			DepositResources();
+		}
+		else if (ResourcesAround() && LevelResources() != FULL_LEVEL )
+		{
+			CollectResources(NearestResource());
+		}
+		else if(SurvivorsAround()){
+			if(isAnySurvivorAttacking()){
+				MoveTo(anySurvivorAttacking());
 			}
-			else
+			else if (isAnySurvivorCollecting()){
+				MoveTo(anySurvivorCollecting());
+			}
+			/** /
+			//doesn't make it more efficient, map is less explored
+			else if(isAnySurvivorMoving()){
+				MoveTo(anySurvivorMoving);
+			}
+			/**/
+			else{
 				randomMove();
+			}
+		}
+		else
+			randomMove();
 
-				//avoid navmesh pathfinding issues
-				checkImpossiblePathAndReset();
-				//DO NOT DELETE This forces collision updates in every frame
-				this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
-				//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
+
+
+
+			//avoid navmesh pathfinding issues
+			checkImpossiblePathAndReset();
+			//DO NOT DELETE This forces collision updates in every frame
+			this.transform.root.gameObject.transform.position += new Vector3(0.0f, 0.0f, -0.00001f);
+			//Collider[] colliders = Physics.OverlapSphere(this.transform.position,_visionRange);
 
 		/**/
 		}else{
@@ -917,130 +690,4 @@ public class Survivor_Leader: MonoBehaviour {
 			this.rigidbody.AddForce(0,100.0f,0, ForceMode.Force);
 		}
 	}
-
-    //TODO : LEADER STUFF
-
-
-    // Leader Recruiting Survivors
-    public void RecruitingSurvivors()
-    {
-        if (_isPartyLeader)
-        {
-            foreach (GameObject sur in _survivorsInSight)
-            {
-                //if(!_recruits.Contains(sur))
-                    sur.GetComponent<Survivor_Leader>().NewPossibleLeader(gameObject);
-            }
-        }
-    }
-
-
-    // Leader Confirming Survivors in Party
-    public void ConfirmRecruitSurvivors()
-    {
-        if (_isPartyLeader)
-        {
-            List<GameObject> SurvivorsToParty = getBestRecruitsSurvivors();
-            
-            foreach (GameObject sur in SurvivorsToParty)
-            {
-               sur.GetComponent<Survivor_Leader>().ConfirmRecruitment(gameObject);
-            }
-            _isInParty = true;
-        }
-        
-    }
-
-    // Survivor Accepting Leader
-
-    public void AcceptLeader()
-    {
-        if (!_isPartyLeader && !_isInParty && _possibleLeaders.Count > 0)
-        {
-            
-            //TODO : Como decidir se quer ou n entrar na party
-            _possibleLeaders[0].GetComponent<Survivor_Leader>().NewRecruit(gameObject);
-            
-        }
-    }
-
-    // Leader Confirm Recruitment to this Survivor
-    public void ConfirmRecruitment(GameObject leader)
-    {
-        
-        if (_partyLeader == null || _partyLeader.name != leader.name)
-        {
-            _partyLeader = leader;
-            _isInParty = true;
-
-            _possibleLeaders.Clear();
-
-        }
-    }
-
-    // Survivor Adds new Possible Leader
-    public void NewPossibleLeader(GameObject leader)
-    {
-        if (!_isPartyLeader)
-        {
-            _possibleLeaders.Add(leader);
-        }
-    }
-
-    // Leader Adds new Survivor Recruit
-
-    public void NewRecruit(GameObject recruit)
-    {
-        if (_isPartyLeader)
-        {
-            _recruits.Add(recruit);
-        }
-    }
-
-    // Leader Disbands Whole Party
-    public void disbandWholeParty()
-    {
-        _isPartyLeader = false;
-        _isInParty = false;
-
-        foreach (GameObject exRecruit in _recruits)
-        {
-            exRecruit.GetComponent<Survivor_Leader>()._partyLeader = null;
-            exRecruit.GetComponent<Survivor_Leader>()._isInParty = false;
-        }
-
-    }
-
-    // Leader Disbands Party Member
-    public void disbandPartyMember(GameObject member)
-    {
-        _recruits.Remove(member);
-        member.GetComponent<Survivor_Leader>()._partyLeader = null;
-        member.GetComponent<Survivor_Leader>()._isInParty = false;
-
-    }
-
-    // Survivor Leaves Party
-    public void LeaveParty(){
-        _partyLeader.GetComponent<Survivor_Leader>()._recruits.Remove(gameObject);
-        _partyLeader = null;
-        _isInParty = false;
-    }
-
-
-
-    // Leader Disbands Party Member
-    private List<GameObject> getBestRecruitsSurvivors()
-    {
-        List<GameObject> newList = _recruits.OrderBy(x => (x.GetComponent<Survivor_Leader>()._healthLevel - x.GetComponent<Survivor_Leader>()._resourceLevel)).ToList();
-
-        List<GameObject> bestSurvivors = new List<GameObject>();
-        for (int i = 0; i <= numberPartyMembers && i < newList.Count; i++)
-        {
-            bestSurvivors.Add(newList[i]);
-        }
-
-        return bestSurvivors;
-    }
-    //END
 }

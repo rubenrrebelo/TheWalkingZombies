@@ -161,7 +161,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         _visionRange = 20.0f;
         _attDamage = 25.0f;
         _attRange = 5.0f;
-        _resourceLevel = 50.0f;
+        _resourceLevel = 0.0f;
 
         _zombiesInSight = new List<GameObject>();
         _survivorsInSight = new List<GameObject>();
@@ -435,7 +435,6 @@ public class Survivor_Deliberative : MonoBehaviour {
             return false;
     }
 
-    //TODO:finishing this    
 	private bool ZombiesAroundParty()
 	{
 		if(ZombiesAround()){
@@ -759,15 +758,21 @@ public class Survivor_Deliberative : MonoBehaviour {
     public Vector3 getNearestResourceMap()
     {
         float dist = Mathf.Infinity;
+        List<GameObject> bremoved = new List<GameObject>();
 
         Vector3 posB = Vector3.zero;
         foreach (GameObject res in resources_location)
         {
-            if (dist > Vector3.Distance(this.transform.position, res.transform.position))
-            {
-                dist = Vector3.Distance(this.transform.position, res.transform.position);
-                posB = res.transform.position;
-            }
+            if(res != null){
+	            if (dist > Vector3.Distance(this.transform.position, res.transform.position))
+	            {
+	                dist = Vector3.Distance(this.transform.position, res.transform.position);
+	                posB = res.transform.position;
+	            }
+       		}else{
+       			resources_location.Remove(res);
+       			break;
+       		}
         }
 
         return posB;
@@ -783,6 +788,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
             resources_location.Remove(resToDelete);
         }
+        
     }
 
 
@@ -1135,11 +1141,17 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
 			if(_reachedNextPoint2Explore){
 				_nextPoint2Explore = unexploredPosition();
+				
+				if (Vector3.Distance(_nextPoint2Explore, transform.position) < 150){
+					_nextPoint2Explore = unexploredPosition();
+				}
+				
+				//sphere.transform.position = _nextPoint2Explore;
 				_reachedNextPoint2Explore = false;
 			}
 
 			if (_exploredPoints > 0){
-	            if (Vector3.Distance(_nextPoint2Explore, transform.position) < 1){
+	            if (Vector3.Distance(_nextPoint2Explore, transform.position) < 5){
 					Debug.Log("and im near an objective! ");
 					_exploredPoints--;
 					_reachedNextPoint2Explore = true;
@@ -1232,12 +1244,13 @@ public class Survivor_Deliberative : MonoBehaviour {
 
     private Vector3 unexploredPosition()
     {
-		/** /
+		/**/
         Vector3 dest = new Vector3(transform.position.x + Random.Range(-200.0f, 200.0f)
                        , transform.position.y,
                        transform.position.z + Random.Range(-200.0f, 200.0f));
+        
         int i = 0;
-        while (getMapPositionInfoExplored(dest) && i < 5)
+        while (getMapPositionInfoExplored(dest) && i < 500)
         {
             i++;
             dest = new Vector3(transform.position.x + Random.Range(-200.0f, 200.0f)
@@ -1250,12 +1263,10 @@ public class Survivor_Deliberative : MonoBehaviour {
         navMeshComp.Raycast(dest, out hit);
         dest = hit.position;
 
-        
-
-        //Debug.Log(name + " * " + dest);
         return dest;
         
         /**/
+        /** /
 		//TODO: debug section, delete afterwards
 		Vector3 pos1 = new Vector3(60.0f,17.3f,120);
 		Vector3 pos2 = new Vector3(90.0f,17.3f,150);
@@ -1265,6 +1276,7 @@ public class Survivor_Deliberative : MonoBehaviour {
 		}else{
 			return pos1;
 		}
+		/**/
     }
 
 
@@ -1317,7 +1329,7 @@ public class Survivor_Deliberative : MonoBehaviour {
             Desires.Add(COLLECT);
         //variavel
 
-        if (LevelHealth() == CRITICAL_LEVEL && SurvivorsAround() && isHereSurvivorWithoutCritical() && !IsInBase())
+        if (LevelHealth() == CRITICAL_LEVEL && SurvivorsAround() && isHereSurvivorWithoutCritical() && !IsInBase() && !_isPartyLeader)
             Desires.Add(FOLLOW_SURVIVOR);
         //variavel
 
@@ -1498,6 +1510,9 @@ public class Survivor_Deliberative : MonoBehaviour {
 		    else if (resources_location.Count() > 0)
 		    {
 		        intention_position = getNearestResourceMap();
+				if(intention_position.Equals(Vector3.zero)){
+					intention_position = NearestResourcePosition();
+				}
 		    }
 			_previousIntention = "collect";
         }
@@ -1507,7 +1522,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         }
         if (intention == EXPLORE_SOLO)
         {
-			Debug.Log("Going solo");
+			Debug.Log(gameObject.name + " is going solo");
             intention_position = unexploredPosition();
         }
         if (intention == GO_BASE)
@@ -1532,13 +1547,13 @@ public class Survivor_Deliberative : MonoBehaviour {
 
         if (intention == EXPLORE_AS_GROUP)
         {
-			if(!_previousIntention.Equals("groupAttack")|| !_previousIntention.Equals("collect")){
+			if(!(_previousIntention.Equals("groupAttack") || _previousIntention.Equals("collect"))){
 				//TODO:set this as const
 				_exploredPoints = 4;
 				_reachedNextPoint2Explore = true;
 				_previousIntention = "";
 			}else{
-				Debug.Log("came from attack");
+				//Debug.Log("came from attack");
 			}
         }
 
@@ -1898,11 +1913,9 @@ public class Survivor_Deliberative : MonoBehaviour {
 		if (intention == EXPLORE_AS_GROUP && (ResourcesAround() || ZombiesAround())) {
             return true;
         }
-		/*
-        if (intention == IDLE) {
+		if (intention == JOIN_PARTY && (ResourcesAround() || ZombiesAround())) {
             return true;
         }
-        */
         
         //TODO: TODO TODO
 
@@ -1923,8 +1936,7 @@ public class Survivor_Deliberative : MonoBehaviour {
         else
             resourceLevel = 0;
 
-
-        mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
+		mapObj.GetComponent<Map>().UpdateMap(this.gameObject, _explorerMap, new Vector2(x, y), resourceLevel, type);
 
         if (_explorerMap[x][y] != 0)
         {
@@ -2104,12 +2116,14 @@ public class Survivor_Deliberative : MonoBehaviour {
         {
             Debug.Log(this.name + " died.");
 
-            sayMyLastWords();
-			
-			if(_isPartyLeader){
-				passKnowledgeToNextLeader();
+			if(_isInParty){
+	            sayMyLastWords();
+				
+				if(_isPartyLeader){
+					passKnowledgeToNextLeader();
+				}
 			}
-
+			
             //to make it "disappear"
             _dead = true;
             Instantiate(Resources.Load(@"Models/Characters/Zombie"), this.transform.position, this.transform.rotation);
@@ -2233,9 +2247,6 @@ public class Survivor_Deliberative : MonoBehaviour {
 
     void Update()
     {
-		if(_partyLeader != null){
-			sphere.transform.position = _partyLeader.transform.position;
-		}
 
 		if (!_dead)
         {
@@ -2282,7 +2293,6 @@ public class Survivor_Deliberative : MonoBehaviour {
 
                     if (reconsider())
                     {
-                        Debug.Log("tou a reconsiderar");
                         Options();
                         filter();
                         Planner();

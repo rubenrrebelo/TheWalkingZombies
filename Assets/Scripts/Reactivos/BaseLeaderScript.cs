@@ -26,7 +26,7 @@ public class BaseLeaderScript: MonoBehaviour {
 	private List<GameObject> _survivorsInSight;
     //private List<GameObject> _barriersInSight;
 
-    private const int MIN_TEAM_MEMBERS = 6;
+    private const int MIN_TEAM_MEMBERS = 5;
 	private List<GameObject> _queuedFutureTeamMembers;
 	private GameObject _nextFutureTeamLeader;
 	private int _numberFutureTeamMembers;
@@ -47,6 +47,8 @@ public class BaseLeaderScript: MonoBehaviour {
     public int[][] _explorerMap;
 
     private GameObject mapObj;
+    
+    public float _totalAmmountOfResources = 0;
 	
 	void Start () {
 
@@ -273,6 +275,7 @@ public class BaseLeaderScript: MonoBehaviour {
 			_nextFutureTeamLeader = _queuedFutureTeamMembers[0];
 			_queuedFutureTeamMembers.Remove(_nextFutureTeamLeader);
 
+			Debug.Log(_nextFutureTeamLeader.name + " will lead an exploration party!");
 
 			List<GameObject> aux = new List<GameObject>();
             
@@ -385,6 +388,7 @@ public class BaseLeaderScript: MonoBehaviour {
 
 	public void addResources(float ammount){
 		_resourcesLevel += ammount;
+		_totalAmmountOfResources += ammount;
 	}
 
 	private IEnumerator destroyAfterDeath(){

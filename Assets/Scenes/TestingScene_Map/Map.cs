@@ -15,8 +15,8 @@ public class Map : MonoBehaviour {
 
     public Vector2 mapCenter = new Vector2();
 
-    public static int MAP_WIDTH = 100;
-    public static int MAP_HEIGHT = 100;
+    public static int MAP_WIDTH = 60;
+    public static int MAP_HEIGHT = 60;
     public static int MAP_QUAD_DIMENSIONS = 15;
 
     public static int MAP_EMPTY_POS = -2;
@@ -49,11 +49,12 @@ public class Map : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		_explorerMap = new GameObject[MAP_WIDTH][];
         cameraMap = GameObject.Find("CameraMap");
         cammap = GameObject.Find("Map");
 
 
-        _explorerMap = new GameObject[MAP_WIDTH][];
+        //_explorerMap = new GameObject[MAP_WIDTH][];
         for (int i = 0; i < MAP_WIDTH; i++)
         {
             _explorerMap[i] = new GameObject[MAP_HEIGHT];
@@ -109,8 +110,6 @@ public class Map : MonoBehaviour {
         GUI.Label(new Rect(Screen.width - 100, Screen.height - 20, 100, 20), _survivorObjMap.name);
     }
 
-    
-	
 	// Update is called once per frame
 	public void UpdateMap (GameObject obj, int[][] map, Vector2 newPos, float resourceLevel, int type) {
         /** /

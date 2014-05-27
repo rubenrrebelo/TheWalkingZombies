@@ -47,7 +47,7 @@ public class ZombieScript: MonoBehaviour {
 
 	void Start () {
 		_healthLevel = FULL_HEALTH;
-		_movSpeed = 8.0f;
+		_movSpeed = 9.0f;
 		_visionRange = 20.0f;
 		_attDamage = 30.0f;
 		_attRange = 2.0f;
@@ -334,6 +334,7 @@ public class ZombieScript: MonoBehaviour {
 		if(_healthLevel <= 0 && !_dead){
 			Debug.Log(this.name + " died.");
 			_dead = true;
+			GameObject.Find("ScriptHolder").GetComponent<Stats>().zombieKilled();
 			StartCoroutine("destroyAfterDeath");
 		}
 	}
